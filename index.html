@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>상하이버터떡 맵 | 전국 버터떡 실시간 재고 지도</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --green: #22C55E; --yellow: #EAB308; --red: #EF4444;
+    --green-bg: #DCFCE7; --yellow-bg: #FEF9C3; --red-bg: #FEE2E2;
+    --brown: #8B6914; --butter: #E8A838; --cream: #FFF8E7;
+  }
+  html, body { height:100%; width:100%; overflow:hidden; font-family:'Noto Sans KR',sans-serif; }
+
+  /* === FULL SCREEN MAP === */
+  #map { width:100%; height:100%; }
+
+  /* === TOP SEARCH BAR (floating) === */
+  .search-bar {
+    position:fixed; top:16px; left:50%; transform:translateX(-50%);
+    z-index:500; width:min(420px, calc(100% - 32px));
+  }
+  .search-bar input {
+    width:100%; padding:14px 48px 14px 18px;
+    border:none; border-radius:8px;
+    background:rgba(255,255,255,0.97);
+    box-shadow:0 2px 12px rgba(0,0,0,0.15);
+    font-size:15px; font-family:inherit; color:#333;
+    outline:none;
+  }
+  .search-bar input::placeholder { color:#999; }
+  .search-bar .search-icon {
+    position:absolute; right:16px; top:50%; transform:translateY(-50%);
+    font-size:20px; color:#666; cursor:pointer;
+  }
+  .search-results {
+    display:none; background:white; border-radius:0 0 8px 8px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.12); max-height:300px; overflow-y:auto;
+  }
+  .search-results.active { display:block; }
+  .search-result-item {
+    padding:12px 18px; cursor:pointer; border-bottom:1px solid #f0f0f0;
+    display:flex; align-items:center; gap:10px; font-size:14px;
+  }
+  .search-result-item:hover { background:#f9f9f9; }
+  .sr-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* === BOTTOM BAR === */
+  .bottom-bar {
+    position:fixed; bottom:0; left:0; right:0; z-index:500;
+    background:rgba(255,255,255,0.97);
+    box-shadow:0 -1px 8px rgba(0,0,0,0.08);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0; height:56px;
+  }
+  .bottom-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:2px; padding:8px 0;
+    background:none; border:none; cursor:pointer;
+    font-family:inherit; font-size:11px; color:#555;
+    transition:color 0.2s;
+  }
+  .bottom-btn:hover { color:var(--butter); }
+  .bottom-btn .btn-icon { font-size:22px; }
+  .bottom-btn.center-btn { position:relative; }
+  .bottom-btn.center-btn .btn-icon {
+    width:48px; height:48px; background:white;
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 12px rgba(0,0,0,0.15);
+    font-size:24px; margin-top:-20px;
+  }
+
+  /* === STORE POPUP (Bottom Sheet) === */
+  .store-popup-overlay {
+    display:none; position:fixed; bottom:56px; left:0; right:0;
+    z-index:600; padding:0 12px 12px;
+  }
+  .store-popup-overlay.active { display:block; }
+  .store-popup {
+    background:white; border-radius:16px;
+    box-shadow:0 4px 24px rgba(0,0,0,0.15);
+    padding:18px 20px; max-width:400px; margin:0 auto;
+    animation:popUp 0.25s ease-out; position:relative;
+  }
+  @keyframes popUp {
+    from { transform:translateY(20px); opacity:0; }
+    to { transform:translateY(0); opacity:1; }
+  }
+  .popup-close {
+    position:absolute; top:10px; right:12px;
+    background:#f0f0f0; border:none; border-radius:50%;
+    width:26px; height:26px; font-size:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:#888;
+  }
+  .popup-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .popup-marker-icon {
+    width:44px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; font-size:24px;
+  }
+  .popup-marker-icon.available { background:var(--green-bg); }
+  .popup-marker-icon.low { background:var(--yellow-bg); }
+  .popup-marker-icon.soldout { background:var(--red-bg); }
+  .popup-name { font-size:16px; font-weight:700; color:#222; }
+  .popup-type { font-size:12px; color:#999; margin-top:2px; }
+  .popup-stock-bar {
+    padding:10px 14px; border-radius:10px; display:flex;
+    align-items:center; justify-content:space-between; margin-bottom:12px;
+    font-size:14px; font-weight:700;
+  }
+  .popup-stock-bar.available { background:var(--green-bg); color:#166534; }
+  .popup-stock-bar.low { background:var(--yellow-bg); color:#854D0E; }
+  .popup-stock-bar.soldout { background:var(--red-bg); color:#991B1B; }
+  .popup-stock-time { font-size:11px; font-weight:500; opacity:0.7; }
+  .popup-details { display:grid; gap:6px; font-size:13px; color:#555; }
+  .popup-detail { display:flex; align-items:center; gap:8px; }
+  .popup-detail .icon { width:18px; text-align:center; }
+  .popup-actions { display:flex; gap:8px; margin-top:14px; }
+  .popup-action-btn {
+    flex:1; padding:10px; border:1.5px solid #e0e0e0; border-radius:10px;
+    background:white; font-family:inherit; font-size:13px; font-weight:600;
+    cursor:pointer; text-align:center; transition:all 0.2s;
+  }
+  .popup-action-btn:hover { border-color:var(--butter); background:var(--cream); }
+  .popup-action-btn.primary {
+    background:var(--butter); color:white; border-color:var(--butter);
+  }
+  .popup-action-btn.primary:hover { background:#D4941C; }
+
+  /* === FAQ MODAL === */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,0.4); align-items:center; justify-content:center;
+  }
+  .modal-overlay.active { display:flex; }
+  .modal {
+    background:white; border-radius:16px; padding:24px;
+    max-width:380px; width:calc(100% - 32px); max-height:80vh;
+    overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.2);
+  }
+  .modal h2 { font-size:18px; margin-bottom:16px; color:#222; }
+  .modal p { font-size:14px; color:#555; line-height:1.7; margin-bottom:12px; }
+  .modal .close-modal {
+    display:block; width:100%; padding:12px; margin-top:8px;
+    background:var(--butter); color:white; border:none; border-radius:10px;
+    font-size:14px; font-weight:700; cursor:pointer; font-family:inherit;
+  }
+
+  /* === LOADING === */
+  .loading-screen {
+    position:fixed; inset:0; background:var(--cream); z-index:10000;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transition:opacity 0.5s;
+  }
+  .loading-screen.hidden { opacity:0; pointer-events:none; }
+  .loading-icon { font-size:72px; animation:bounce 0.8s infinite alternate; }
+  @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+  .loading-title { font-size:22px; font-weight:800; color:var(--brown); margin-top:12px; }
+  .loading-sub { font-size:13px; color:#999; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-screen" id="loading">
+  <div class="loading-icon">🧈</div>
+  <div class="loading-title">상하이버터떡 맵</div>
+  <div class="loading-sub">전국 버터떡 매장을 불러오는 중...</div>
+</div>
+
+<!-- Search Bar -->
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="카페/지역 검색 (예: 강남)" autocomplete="off">
+  <span class="search-icon" id="searchIcon">🔍</span>
+  <div class="search-results" id="searchResults"></div>
+</div>
+
+<!-- Map -->
+<div id="map"></div>
+
+<!-- Store Popup -->
+<div class="store-popup-overlay" id="popupOverlay">
+  <div class="store-popup">
+    <button class="popup-close" id="popupClose">✕</button>
+    <div class="popup-header">
+      <div class="popup-marker-icon" id="popupIcon"></div>
+      <div>
+        <div class="popup-name" id="popupName"></div>
+        <div class="popup-type" id="popupType"></div>
+      </div>
+    </div>
+    <div class="popup-stock-bar" id="popupStock">
+      <span id="popupStockLabel"></span>
+      <span class="popup-stock-time" id="popupStockTime"></span>
+    </div>
+    <div class="popup-details">
+      <div class="popup-detail"><span class="icon">📍</span><span id="popupAddr"></span></div>
+      <div class="popup-detail"><span class="icon">🍰</span><span id="popupMenu"></span></div>
+      <div class="popup-detail"><span class="icon">💰</span><span id="popupPrice"></span></div>
+    </div>
+    <div class="popup-actions">
+      <button class="popup-action-btn" onclick="copyAddress()">📋 주소복사</button>
+      <button class="popup-action-btn primary" onclick="openNavi()">🧭 길찾기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <button class="bottom-btn" id="btnFaq">
+    <span class="btn-icon">📖</span>
+    <span>사용법(FAQ)</span>
+  </button>
+  <button class="bottom-btn center-btn" id="btnMyLocation">
+    <span class="btn-icon">📍</span>
+    <span>내 주변</span>
+  </button>
+  <button class="bottom-btn" id="btnOwner">
+    <span class="btn-icon">👤</span>
+    <span>사장님 로그인</span>
+  </button>
+</div>
+
+<!-- FAQ Modal -->
+<div class="modal-overlay" id="faqModal">
+  <div class="modal">
+    <h2>🧈 상하이버터떡 맵 사용법</h2>
+    <p><b>마커 색상 안내</b><br>
+      🟢 <b>초록색</b> = 재고 충분 (10개 이상)<br>
+      🟡 <b>노란색</b> = 품절 임박 (10개 미만)<br>
+      🔴 <b>빨간색</b> = 품절 (0개)
+    </p>
+    <p><b>재고 숫자</b><br>
+      마커 옆 숫자가 현재 남은 버터떡 개수입니다.<br>
+      매장 사장님이 직접 업데이트합니다.
+    </p>
+    <p><b>검색</b><br>
+      상단 검색창에서 지역명(강남, 성수 등) 또는 매장명을 검색할 수 있습니다.
+    </p>
+    <p><b>내 주변</b><br>
+      하단 '내 주변' 버튼을 누르면 현재 위치 주변 매장을 볼 수 있습니다.
+    </p>
+    <p style="font-size:12px;color:#aaa;margin-top:8px;">
+      ※ 재고는 실시간이 아닐 수 있으니, 방문 전 매장에 확인하세요.<br>
+      ※ 매장 등록 문의: buttertteokmaps@gmail.com
+    </p>
+    <button class="close-modal" onclick="document.getElementById('faqModal').classList.remove('active')">확인</button>
+  </div>
+</div>
+
+<!-- Owner Login Modal -->
+<div class="modal-overlay" id="ownerModal">
+  <div class="modal">
+    <h2>👤 사장님 로그인</h2>
+    <p>매장 사장님 전용 재고 업데이트 페이지입니다.</p>
+    <p style="font-size:13px;color:#888;">
+      매장 등록 및 로그인 문의:<br>
+      <b>buttertteokmaps@gmail.com</b>
+    </p>
+    <button class="close-modal" onclick="document.getElementById('ownerModal').classList.remove('active')">닫기</button>
+  </div>
+</div>
+
+<!-- Naver Map SDK (demo) -->
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304"></script>
+<script>
+// ============================================
+// STORE DATA
+// ============================================
+const stores = [
+  { id:1, name:"이웃집통통이 압구정점", addr:"서울 강남구 선릉로161길 19", region:"서울", area:"압구정", lat:37.5275, lng:127.0310, type:"베이커리", menu:"글루텐프리 버터떡", price:"6개입 세트", status:"available", stock:120, updated:"10분 전" },
+  { id:2, name:"이웃집통통이 망원점", addr:"서울 마포구 월드컵로13길 79", region:"서울", area:"망원", lat:37.5570, lng:126.9120, type:"베이커리", menu:"글루텐프리 버터떡", price:"6개입 세트", status:"low", stock:7, updated:"1시간 전" },
+  { id:3, name:"오우드 성수", addr:"서울 성동구 연무장길 101-1", region:"서울", area:"성수", lat:37.5448, lng:127.0580, type:"베이커리 카페", menu:"마들렌 모양 버터떡", price:"개당 6,500원", status:"available", stock:30, updated:"20분 전" },
+  { id:4, name:"새들러하우스", addr:"서울 강남구 도산대로17길 10 B1", region:"서울", area:"신사", lat:37.5222, lng:127.0230, type:"베이커리 카페", menu:"100% 버터 떡", price:"5개입 12,000원", status:"available", stock:24, updated:"45분 전" },
+  { id:5, name:"카페 이오이", addr:"서울 마포구 독막로 252 1층", region:"서울", area:"대흥", lat:37.5530, lng:126.9400, type:"카페", menu:"하트 모양 버터떡", price:"개당 1,500원", status:"available", stock:100, updated:"15분 전" },
+  { id:6, name:"구십이도", addr:"서울 광진구 천호대로110길 40", region:"서울", area:"광진", lat:37.5410, lng:127.0820, type:"카페", menu:"상하이 정통 버터떡", price:"개당 6,500원", status:"low", stock:3, updated:"2시간 전" },
+  { id:7, name:"온기", addr:"서울 서초구 명달로70길 10", region:"서울", area:"서초", lat:37.4910, lng:127.0150, type:"디저트 카페", menu:"플뢰르드셀 버터떡", price:"개당 5,500원", status:"available", stock:36, updated:"1시간 전" },
+  { id:8, name:"늘해피", addr:"서울 강남구 학동로 342 B1F", region:"서울", area:"강남", lat:37.5160, lng:127.0380, type:"카페", menu:"딸기크림치즈/솔티캬라멜", price:"개당 6,500원", status:"soldout", stock:0, updated:"3시간 전" },
+  { id:9, name:"데이라이트 신도림", addr:"서울 구로구 경인로 662", region:"서울", area:"신도림", lat:37.5089, lng:126.8913, type:"디저트 카페", menu:"버터떡, 에그타르트", price:"개당 6,000원", status:"available", stock:20, updated:"40분 전" },
+  { id:10, name:"데이라이트 구로", addr:"서울 구로구 디지털로 300", region:"서울", area:"구로", lat:37.4855, lng:126.9015, type:"디저트 카페", menu:"버터떡, 다쿠아즈", price:"개당 6,000원", status:"low", stock:4, updated:"1시간 전" },
+  { id:11, name:"하츠베이커리 성수", addr:"서울 성동구 성수이로 90", region:"서울", area:"성수", lat:37.5430, lng:127.0540, type:"베이커리", menu:"왕버터떡", price:"개당 7,500원", status:"available", stock:33, updated:"50분 전" },
+  { id:12, name:"르 샤흠 디저트", addr:"서울 용산구 이태원로 210", region:"서울", area:"이태원", lat:37.5345, lng:126.9950, type:"디저트 카페", menu:"꼬소한 버터떡", price:"개당 7,000원", status:"available", stock:20, updated:"25분 전" },
+  { id:13, name:"버터떡 팝업 롯데월드몰", addr:"서울 송파구 올림픽로 300 B1F", region:"서울", area:"잠실", lat:37.5133, lng:127.1020, type:"팝업숍", menu:"다양한 맛 버터떡", price:"개당 6,500원", status:"available", stock:1000, updated:"5분 전" },
+  { id:14, name:"코코하우스 망원", addr:"서울 마포구 망원로 62", region:"서울", area:"망원", lat:37.5555, lng:126.9100, type:"카페", menu:"버터떡", price:"개당 6,500원", status:"available", stock:49, updated:"1시간 전" },
+  { id:15, name:"홍대 버터떡공방", addr:"서울 마포구 홍익로 25", region:"서울", area:"홍대", lat:37.5563, lng:126.9237, type:"베이커리", menu:"수제 버터떡", price:"개당 5,000원", status:"soldout", stock:0, updated:"4시간 전" },
+  { id:16, name:"여의도 떡이야기", addr:"서울 영등포구 여의대로 108", region:"서울", area:"여의도", lat:37.5247, lng:126.9262, type:"떡카페", menu:"버터떡, 인절미", price:"개당 6,000원", status:"available", stock:105, updated:"30분 전" },
+  { id:17, name:"건대입구 버터풍", addr:"서울 광진구 아차산로 200", region:"서울", area:"건대", lat:37.5407, lng:127.0702, type:"카페", menu:"버터떡, 크루아상", price:"개당 6,000원", status:"available", stock:568, updated:"15분 전" },
+  { id:18, name:"관악 버터공장", addr:"서울 관악구 관악로 145", region:"서울", area:"관악", lat:37.4784, lng:126.9516, type:"베이커리", menu:"버터떡", price:"개당 5,500원", status:"available", stock:99, updated:"20분 전" },
+  { id:19, name:"노량진 떡버터", addr:"서울 동작구 노량진로 150", region:"서울", area:"노량진", lat:37.5130, lng:126.9420, type:"떡카페", menu:"버터떡, 꿀떡", price:"개당 5,000원", status:"available", stock:150, updated:"35분 전" },
+  { id:20, name:"금천 버터떡집", addr:"서울 금천구 시흥대로 410", region:"서울", area:"금천", lat:37.4568, lng:126.8955, type:"베이커리", menu:"버터떡", price:"개당 6,000원", status:"low", stock:10, updated:"2시간 전" },
+  { id:21, name:"잠실 떡 팩토리", addr:"서울 송파구 백제고분로 300", region:"서울", area:"잠실", lat:37.5050, lng:127.0880, type:"베이커리", menu:"프리미엄 버터떡", price:"개당 7,000원", status:"available", stock:23, updated:"40분 전" },
+  { id:22, name:"강서 버터하우스", addr:"서울 강서구 공항대로 168", region:"서울", area:"강서", lat:37.5500, lng:126.8490, type:"카페", menu:"버터떡, 크로플", price:"개당 6,000원", status:"available", stock:40, updated:"25분 전" },
+  { id:23, name:"동대문 떡공방", addr:"서울 동대문구 한천로 75", region:"서울", area:"동대문", lat:37.5845, lng:127.0558, type:"떡공방", menu:"전통 버터떡", price:"개당 5,500원", status:"available", stock:99, updated:"45분 전" },
+  { id:24, name:"은평 버터떡카페", addr:"서울 은평구 연서로 320", region:"서울", area:"은평", lat:37.6175, lng:126.9275, type:"카페", menu:"버터떡", price:"개당 6,000원", status:"soldout", stock:0, updated:"5시간 전" },
+  { id:25, name:"도봉 달콤버터", addr:"서울 도봉구 도봉로 400", region:"서울", area:"도봉", lat:37.6533, lng:127.0475, type:"카페", menu:"버터떡", price:"개당 5,500원", status:"available", stock:30, updated:"1시간 전" },
+  // 경기
+  { id:26, name:"분당 버터떡하우스", addr:"경기 성남시 분당구 정자일로 166", region:"경기", area:"분당", lat:37.3682, lng:127.1088, type:"베이커리", menu:"버터떡, 쌀케이크", price:"개당 6,500원", status:"available", stock:100, updated:"30분 전" },
+  { id:27, name:"수원 버터떡집", addr:"경기 수원시 팔달구 정조로 795", region:"경기", area:"수원", lat:37.2755, lng:127.0076, type:"베이커리", menu:"전통 버터떡", price:"개당 6,000원", status:"available", stock:300, updated:"20분 전" },
+  { id:28, name:"용인 수지 떡카페", addr:"경기 용인시 수지구 성복로 74", region:"경기", area:"용인", lat:37.3244, lng:127.1054, type:"떡카페", menu:"버터떡, 약과", price:"개당 6,500원", status:"low", stock:8, updated:"2시간 전" },
+  { id:29, name:"일산 베이킹룸", addr:"경기 고양시 일산동구 장항동 860", region:"경기", area:"일산", lat:37.6549, lng:126.7658, type:"베이커리", menu:"버터떡", price:"개당 6,500원", status:"available", stock:25, updated:"45분 전" },
+  { id:30, name:"판교 떡플레이스", addr:"경기 성남시 분당구 판교역로 146", region:"경기", area:"판교", lat:37.3947, lng:127.1112, type:"디저트숍", menu:"프리미엄 버터떡", price:"개당 7,000원", status:"available", stock:115, updated:"15분 전" },
+  { id:31, name:"파주 프리미엄떡", addr:"경기 파주시 금릉역로 62", region:"경기", area:"파주", lat:37.7638, lng:126.7802, type:"베이커리", menu:"유기농 버터떡", price:"개당 7,500원", status:"available", stock:20, updated:"50분 전" },
+  // 인천
+  { id:32, name:"호카스콘샵", addr:"인천 남동구 문화서로23번길 36", region:"인천", area:"구월동", lat:37.4480, lng:126.7310, type:"베이커리 카페", menu:"버터떡, 스콘", price:"개당 5,500원", status:"available", stock:46, updated:"15분 전" },
+  { id:33, name:"르우 카페", addr:"인천 서구 검단로 200", region:"인천", area:"검단", lat:37.5940, lng:126.6750, type:"카페", menu:"꽃 모양 버터떡", price:"개당 6,000원", status:"low", stock:5, updated:"3시간 전" },
+  { id:34, name:"인천 부평 떡이랑", addr:"인천 부평구 부평대로 238", region:"인천", area:"부평", lat:37.4900, lng:126.7230, type:"떡카페", menu:"버터떡", price:"개당 6,000원", status:"available", stock:100, updated:"30분 전" },
+  // 부산
+  { id:35, name:"서면 버터떡", addr:"부산 부산진구 서면문화로 22", region:"부산", area:"서면", lat:35.1580, lng:129.0595, type:"베이커리", menu:"버터떡", price:"개당 6,500원", status:"available", stock:99, updated:"40분 전" },
+  { id:36, name:"광안리 버터카페", addr:"부산 수영구 광안해변로 255", region:"부산", area:"광안리", lat:35.1535, lng:129.1183, type:"카페", menu:"해변 버터떡", price:"개당 7,000원", status:"available", stock:20, updated:"1시간 전" },
+  { id:37, name:"해운대 버터랩", addr:"부산 해운대구 해운대해변로 298", region:"부산", area:"해운대", lat:35.1589, lng:129.1604, type:"디저트 카페", menu:"프리미엄 버터떡", price:"개당 7,500원", status:"low", stock:3, updated:"2시간 전" },
+  // 대구
+  { id:38, name:"떡터아리랑 대구", addr:"대구 수성구 두산동 339-12", region:"대구", area:"수성", lat:35.8430, lng:128.6320, type:"떡카페", menu:"전통 버터떡", price:"개당 6,500원", status:"available", stock:30, updated:"30분 전" },
+  { id:39, name:"동성로 버터떡숍", addr:"대구 중구 동성로2길 55", region:"대구", area:"동성로", lat:35.8698, lng:128.5958, type:"디저트숍", menu:"버터떡", price:"개당 6,500원", status:"available", stock:40, updated:"20분 전" },
+  // 대전
+  { id:40, name:"대전 은행동 버터떡", addr:"대전 중구 은행동 145-1", region:"대전", area:"은행동", lat:36.3277, lng:127.4270, type:"카페", menu:"버터떡", price:"개당 6,000원", status:"available", stock:47, updated:"1시간 전" },
+  // 광주
+  { id:41, name:"광주 동명동 버터카페", addr:"광주 동구 동명로 58", region:"광주", area:"동명동", lat:35.1485, lng:126.9230, type:"카페", menu:"버터떡", price:"개당 6,000원", status:"available", stock:20, updated:"45분 전" },
+  // 제주
+  { id:42, name:"토마틀 제주", addr:"제주시 조천읍 선흘리 2734-28", region:"제주", area:"조천", lat:33.4569, lng:126.7022, type:"카페", menu:"제주 감귤 버터떡", price:"개당 7,000원", status:"available", stock:100, updated:"30분 전" },
+];
+
+// ============================================
+// SVG Butter Tteak Marker
+// ============================================
+function createMarkerSVG(stock, status) {
+  const color = status === 'available' ? '#22C55E' : status === 'low' ? '#EAB308' : '#EF4444';
+  const textColor = status === 'low' ? '#854D0E' : '#fff';
+  const badgeR = stock >= 1000 ? 22 : stock >= 100 ? 18 : 15;
+  const fontSize = stock >= 1000 ? 11 : stock >= 100 ? 12 : 13;
+  const svgW = 50 + badgeR;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="52" viewBox="0 0 ${svgW} 52">
+    <!-- Butter tteak body -->
+    <ellipse cx="20" cy="28" rx="18" ry="16" fill="#C8962E" />
+    <ellipse cx="20" cy="26" rx="16" ry="13" fill="#E8B84E" />
+    <ellipse cx="20" cy="24" rx="12" ry="9" fill="#F5D78E" opacity="0.6" />
+    <ellipse cx="16" cy="21" rx="4" ry="3" fill="#FFF3D6" opacity="0.5" />
+    <!-- Stock badge -->
+    <circle cx="${20 + badgeR + 12}" cy="${badgeR}" r="${badgeR}" fill="${color}" stroke="white" stroke-width="2.5"/>
+    <text x="${20 + badgeR + 12}" y="${badgeR + 1}" text-anchor="middle" dominant-baseline="central"
+      font-family="Noto Sans KR,sans-serif" font-weight="800" font-size="${fontSize}" fill="${textColor}">${stock}</text>
+  </svg>`;
+}
+
+// ============================================
+// MAP INIT
+// ============================================
+let map, currentPopupStore = null;
+
+function initMap() {
+  const container = document.getElementById('map');
+
+  try {
+    map = new naver.maps.Map(container, {
+      center: new naver.maps.LatLng(37.52, 127.0),
+      zoom: 12,
+      zoomControl: false,
+      mapTypeControl: false,
+      scaleControl: true
+    });
+    addAllMarkers();
+  } catch(e) {
+    // Fallback - canvas based simple map
+    initFallbackMap(container);
+  }
+}
+
+function addAllMarkers() {
+  stores.forEach(store => {
+    const pos = new naver.maps.LatLng(store.lat, store.lng);
+    const svgMarkup = createMarkerSVG(store.stock, store.status);
+    const icon = {
+      content: `<div style="cursor:pointer;" class="map-marker" data-id="${store.id}">${svgMarkup}</div>`,
+      anchor: new naver.maps.Point(20, 36)
+    };
+    const marker = new naver.maps.Marker({ position: pos, map: map, icon: icon });
+    naver.maps.Event.addListener(marker, 'click', () => openPopup(store));
+  });
+}
+
+// ============================================
+// FALLBACK MAP (Canvas)
+// ============================================
+function initFallbackMap(container) {
+  container.style.background = '#E8EDDF';
+  container.style.position = 'relative';
+  container.style.overflow = 'hidden';
+
+  // State
+  let viewLat = 37.52, viewLng = 127.0, zoom = 11;
+  let dragging = false, dragStartX, dragStartY, dragStartLat, dragStartLng;
+
+  const canvas = document.createElement('canvas');
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  container.appendChild(canvas);
+
+  function resize() {
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    draw();
+  }
+
+  function latLngToXY(lat, lng) {
+    const scale = Math.pow(2, zoom) * 80;
+    const x = (lng - viewLng) * scale * Math.cos(viewLat * Math.PI / 180) + canvas.width / 2;
+    const y = (viewLat - lat) * scale + canvas.height / 2;
+    return [x, y];
+  }
+
+  function xyToLatLng(x, y) {
+    const scale = Math.pow(2, zoom) * 80;
+    const lng = (x - canvas.width / 2) / (scale * Math.cos(viewLat * Math.PI / 180)) + viewLng;
+    const lat = viewLat - (y - canvas.height / 2) / scale;
+    return [lat, lng];
+  }
+
+  function draw() {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background
+    ctx.fillStyle = '#F0EBE0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Grid lines
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 0.5;
+    const gridStep = 0.02;
+    for (let lat = 33; lat < 38; lat += gridStep) {
+      const [, y] = latLngToXY(lat, viewLng);
+      if (y > 0 && y < canvas.height) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+    }
+    for (let lng = 125; lng < 130; lng += gridStep) {
+      const [x] = latLngToXY(viewLat, lng);
+      if (x > 0 && x < canvas.width) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+    }
+
+    // Draw stores
+    stores.forEach(store => {
+      const [x, y] = latLngToXY(store.lat, store.lng);
+      if (x < -40 || x > canvas.width + 40 || y < -40 || y > canvas.height + 40) return;
+
+      // Butter tteak shape
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(x, y, 14, 12, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#C8962E';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x, y - 2, 12, 10, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#E8B84E';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(x, y - 3, 7, 5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#F5D78E';
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Stock badge
+      const badgeX = x + 16;
+      const badgeY = y - 12;
+      const color = store.status === 'available' ? '#22C55E' : store.status === 'low' ? '#EAB308' : '#EF4444';
+      const r = String(store.stock).length >= 4 ? 16 : String(store.stock).length >= 3 ? 14 : 12;
+
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = store.status === 'low' ? '#854D0E' : '#fff';
+      ctx.font = `bold ${r > 14 ? 10 : 11}px "Noto Sans KR", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(store.stock, badgeX, badgeY);
+      ctx.restore();
+
+      // Store hit area
+      store._hitX = x;
+      store._hitY = y;
+    });
+
+    // Copyright
+    ctx.fillStyle = '#aaa';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('© 상하이버터떡맵', canvas.width - 10, canvas.height - 64);
+
+    // Scale bar
+    const scaleX = canvas.width - 80;
+    const scaleY = canvas.height - 72;
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(scaleX, scaleY);
+    ctx.lineTo(scaleX + 60, scaleY);
+    ctx.moveTo(scaleX, scaleY - 4);
+    ctx.lineTo(scaleX, scaleY + 4);
+    ctx.moveTo(scaleX + 60, scaleY - 4);
+    ctx.lineTo(scaleX + 60, scaleY + 4);
+    ctx.stroke();
+    ctx.fillStyle = '#888';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('1000m', scaleX + 30, scaleY + 14);
+  }
+
+  // Click
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    for (const store of stores) {
+      if (store._hitX === undefined) continue;
+      const dx = mx - store._hitX;
+      const dy = my - store._hitY;
+      if (dx * dx + dy * dy < 600) {
+        openPopup(store);
+        return;
+      }
+    }
+    closePopup();
+  });
+
+  // Drag
+  canvas.addEventListener('mousedown', (e) => {
+    dragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartLat = viewLat;
+    dragStartLng = viewLng;
+    canvas.style.cursor = 'grabbing';
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const scale = Math.pow(2, zoom) * 80;
+    viewLng = dragStartLng - (e.clientX - dragStartX) / (scale * Math.cos(viewLat * Math.PI / 180));
+    viewLat = dragStartLat + (e.clientY - dragStartY) / scale;
+    draw();
+  });
+  canvas.addEventListener('mouseup', () => { dragging = false; canvas.style.cursor = ''; });
+  canvas.addEventListener('mouseleave', () => { dragging = false; canvas.style.cursor = ''; });
+
+  // Touch
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      dragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragStartY = e.touches[0].clientY;
+      dragStartLat = viewLat;
+      dragStartLng = viewLng;
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', (e) => {
+    if (!dragging || e.touches.length !== 1) return;
+    const scale = Math.pow(2, zoom) * 80;
+    viewLng = dragStartLng - (e.touches[0].clientX - dragStartX) / (scale * Math.cos(viewLat * Math.PI / 180));
+    viewLat = dragStartLat + (e.touches[0].clientY - dragStartY) / scale;
+    draw();
+  }, { passive: true });
+  canvas.addEventListener('touchend', () => { dragging = false; });
+
+  // Zoom
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoom += e.deltaY < 0 ? 0.3 : -0.3;
+    zoom = Math.max(5, Math.min(16, zoom));
+    draw();
+  }, { passive: false });
+
+  // Expose for external use
+  window._mapView = { viewLat, viewLng, zoom, draw, resize, latLngToXY };
+  window._mapSetCenter = (lat, lng, z) => {
+    viewLat = lat; viewLng = lng;
+    if (z) zoom = z;
+    draw();
+  };
+
+  window.addEventListener('resize', resize);
+  resize();
+}
+
+// ============================================
+// POPUP
+// ============================================
+function openPopup(store) {
+  currentPopupStore = store;
+  const statusEmoji = { available: '🧈', low: '⚠️', soldout: '❌' };
+  const stockMsg = {
+    available: `재고 ${store.stock}개`,
+    low: `재고 ${store.stock}개 (서두르세요!)`,
+    soldout: '현재 품절'
+  };
+
+  document.getElementById('popupIcon').className = `popup-marker-icon ${store.status}`;
+  document.getElementById('popupIcon').textContent = statusEmoji[store.status];
+  document.getElementById('popupName').textContent = store.name;
+  document.getElementById('popupType').textContent = store.type;
+  document.getElementById('popupStock').className = `popup-stock-bar ${store.status}`;
+  document.getElementById('popupStockLabel').textContent = stockMsg[store.status];
+  document.getElementById('popupStockTime').textContent = store.updated;
+  document.getElementById('popupAddr').textContent = store.addr;
+  document.getElementById('popupMenu').textContent = store.menu;
+  document.getElementById('popupPrice').textContent = store.price;
+  document.getElementById('popupOverlay').classList.add('active');
+
+  // Pan map
+  if (window._mapSetCenter) {
+    window._mapSetCenter(store.lat, store.lng);
+  } else if (map) {
+    map.panTo(new naver.maps.LatLng(store.lat, store.lng));
+  }
+}
+
+function closePopup() {
+  document.getElementById('popupOverlay').classList.remove('active');
+  currentPopupStore = null;
+}
+
+function copyAddress() {
+  if (!currentPopupStore) return;
+  navigator.clipboard.writeText(currentPopupStore.addr).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅ 복사됨!';
+    setTimeout(() => { btn.textContent = '📋 주소복사'; }, 1500);
+  });
+}
+
+function openNavi() {
+  if (!currentPopupStore) return;
+  const s = currentPopupStore;
+  window.open(`https://map.naver.com/v5/search/${encodeURIComponent(s.addr)}`, '_blank');
+}
+
+// ============================================
+// SEARCH
+// ============================================
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  const resultsEl = document.getElementById('searchResults');
+
+  if (!q) { resultsEl.classList.remove('active'); return; }
+
+  const results = stores.filter(s =>
+    s.name.toLowerCase().includes(q) || s.addr.toLowerCase().includes(q) ||
+    s.area.toLowerCase().includes(q) || s.region.includes(q)
+  ).slice(0, 8);
+
+  if (results.length === 0) {
+    resultsEl.innerHTML = '<div style="padding:14px 18px;color:#999;font-size:13px;">검색 결과가 없습니다.</div>';
+  } else {
+    const dotColor = s => s.status === 'available' ? '#22C55E' : s.status === 'low' ? '#EAB308' : '#EF4444';
+    resultsEl.innerHTML = results.map(s => `
+      <div class="search-result-item" data-id="${s.id}">
+        <div class="sr-dot" style="background:${dotColor(s)}"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:12px;color:#999;">${s.addr}</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${dotColor(s)};">${s.stock}</div>
+      </div>
+    `).join('');
+  }
+
+  resultsEl.classList.add('active');
+
+  resultsEl.querySelectorAll('.search-result-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const store = stores.find(s => s.id === parseInt(el.dataset.id));
+      if (store) {
+        openPopup(store);
+        resultsEl.classList.remove('active');
+        document.getElementById('searchInput').value = store.name;
+      }
+    });
+  });
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-bar')) {
+    document.getElementById('searchResults').classList.remove('active');
+  }
+});
+
+// ============================================
+// BOTTOM BAR
+// ============================================
+document.getElementById('btnFaq').addEventListener('click', () => {
+  document.getElementById('faqModal').classList.add('active');
+});
+document.getElementById('btnOwner').addEventListener('click', () => {
+  document.getElementById('ownerModal').classList.add('active');
+});
+document.getElementById('btnMyLocation').addEventListener('click', () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (map) {
+        map.setCenter(new naver.maps.LatLng(lat, lng));
+        map.setZoom(14);
+      } else if (window._mapSetCenter) {
+        window._mapSetCenter(lat, lng, 13);
+      }
+    }, () => alert('위치 정보를 가져올 수 없습니다.'));
+  }
+});
+
+document.getElementById('popupClose').addEventListener('click', closePopup);
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('active'); });
+});
+
+// ============================================
+// INIT
+// ============================================
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => { document.getElementById('loading').classList.add('hidden'); }, 1200);
+  initMap();
+});
+</script>
+</body>
+</html>
