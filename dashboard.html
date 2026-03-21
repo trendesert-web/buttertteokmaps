@@ -2627,17 +2627,42 @@
 
         let searchDebounceTimer = null;
         let kakaoPlaces = null;
+        let kakaoReady = false;
+        let kakaoReadyCallbacks = [];
 
         function initKakaoPlaces() {
-            if (kakaoPlaces) return;
-            try {
-                if (window.kakao && window.kakao.maps) {
-                    kakao.maps.load(function() {
-                        kakaoPlaces = new kakao.maps.services.Places();
-                    });
+            if (kakaoReady && kakaoPlaces) return Promise.resolve();
+            return new Promise(function(resolve) {
+                if (kakaoReady && kakaoPlaces) { resolve(); return; }
+                try {
+                    if (window.kakao && window.kakao.maps) {
+                        kakao.maps.load(function() {
+                            kakaoPlaces = new kakao.maps.services.Places();
+                            kakaoReady = true;
+                            console.log('Kakao Places initialized successfully');
+                            kakaoReadyCallbacks.forEach(function(cb) { cb(); });
+                            kakaoReadyCallbacks = [];
+                            resolve();
+                        });
+                    } else {
+                        console.warn('Kakao Maps SDK not loaded');
+                        resolve();
+                    }
+                } catch (e) {
+                    console.warn('Kakao Places init failed:', e);
+                    resolve();
                 }
-            } catch (e) {
-                console.warn('Kakao Places init failed:', e);
+            });
+        }
+
+        function withKakaoPlaces(callback) {
+            if (kakaoReady && kakaoPlaces) {
+                callback(kakaoPlaces);
+            } else {
+                initKakaoPlaces().then(function() {
+                    if (kakaoPlaces) callback(kakaoPlaces);
+                    else console.warn('Kakao Places not available');
+                });
             }
         }
 
@@ -2671,47 +2696,24 @@
         }
 
         function searchKakaoPlaces(query, existingResults) {
-            if (!kakaoPlaces) {
-                initKakaoPlaces();
-                // Retry after init
-                setTimeout(() => {
-                    if (kakaoPlaces) {
-                        kakaoPlaces.keywordSearch(query, function(data, status) {
-                            if (status === kakao.maps.services.Status.OK) {
-                                const kakaoResults = data.slice(0, 8).map(p => ({
-                                    kakaoId: p.id,
-                                    name: p.place_name,
-                                    addr: p.road_address_name || p.address_name,
-                                    category: p.category_group_name || '',
-                                    phone: p.phone || '',
-                                    lat: parseFloat(p.y),
-                                    lng: parseFloat(p.x),
-                                    placeUrl: p.place_url
-                                }));
-                                renderMixedResults(existingResults, kakaoResults, query);
-                            }
-                        });
+            withKakaoPlaces(function(places) {
+                places.keywordSearch(query, function(data, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        const kakaoResults = data.slice(0, 8).map(p => ({
+                            kakaoId: p.id,
+                            name: p.place_name,
+                            addr: p.road_address_name || p.address_name,
+                            category: p.category_group_name || '',
+                            phone: p.phone || '',
+                            lat: parseFloat(p.y),
+                            lng: parseFloat(p.x),
+                            placeUrl: p.place_url
+                        }));
+                        renderMixedResults(existingResults, kakaoResults, query);
+                    } else {
+                        renderMixedResults(existingResults, [], query);
                     }
-                }, 500);
-                return;
-            }
-
-            kakaoPlaces.keywordSearch(query, function(data, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    const kakaoResults = data.slice(0, 8).map(p => ({
-                        kakaoId: p.id,
-                        name: p.place_name,
-                        addr: p.road_address_name || p.address_name,
-                        category: p.category_group_name || '',
-                        phone: p.phone || '',
-                        lat: parseFloat(p.y),
-                        lng: parseFloat(p.x),
-                        placeUrl: p.place_url
-                    }));
-                    renderMixedResults(existingResults, kakaoResults, query);
-                } else {
-                    renderMixedResults(existingResults, [], query);
-                }
+                });
             });
         }
 
@@ -2810,8 +2812,8 @@
             container.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
 
             // Force Kakao search immediately
-            if (kakaoPlaces) {
-                kakaoPlaces.keywordSearch(q, function(data, status) {
+            withKakaoPlaces(function(places) {
+                places.keywordSearch(q, function(data, status) {
                     if (status === kakao.maps.services.Status.OK) {
                         const kakaoResults = data.slice(0, 10).map(p => ({
                             kakaoId: p.id,
@@ -2828,13 +2830,7 @@
                         renderMixedResults(filtered, [], q);
                     }
                 });
-            } else {
-                initKakaoPlaces();
-                setTimeout(() => {
-                    if (kakaoPlaces) searchAndRegister();
-                    else renderMixedResults(filtered, [], q);
-                }, 600);
-            }
+            });
         }
 
         function selectKakaoPlace(placeData) {
