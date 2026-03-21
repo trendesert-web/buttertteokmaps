@@ -1580,33 +1580,31 @@
     <!-- Store Selection Modal -->
     <div class="store-select-overlay" id="storeSelectOverlay" style="display: none;">
         <div class="store-select-modal">
-            <div class="store-select-header">
+            <div class="store-select-header" style="position: relative;">
+                <button onclick="hideStoreSelector()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; color: var(--color-text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,165,116,0.1)'" onmouseout="this.style.background='none'">✕</button>
                 <h2>🏪 매장을 선택해주세요</h2>
                 <p>운영하시는 매장을 검색하거나 새로 등록하세요</p>
             </div>
+            <!-- Search with button -->
             <div class="store-search-box">
-                <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 검색 (실제 장소도 검색됩니다)" oninput="filterStoreList()">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 검색" oninput="filterStoreList()" onkeypress="if(event.key==='Enter'){event.preventDefault(); searchAndRegister();}">
+                    <button class="naver-search-btn" onclick="searchAndRegister()" style="flex-shrink: 0; border-radius: 12px; padding: 12px 18px;">🔍 검색</button>
+                </div>
             </div>
+
+            <!-- Search results (existing + Kakao) -->
             <div class="store-select-list" id="storeSelectList"></div>
 
-            <!-- New Store Registration -->
-            <div class="store-register-section">
-                <button class="store-register-toggle" onclick="toggleRegisterForm()">📝 신규 매장 등록하기</button>
-                <div class="store-register-form" id="storeRegisterForm">
-                    <div class="register-form-group">
-                        <label>네이버 지도에서 매장 검색</label>
-                        <div class="naver-search-row">
-                            <input type="text" class="register-input" id="naverPlaceSearch" placeholder="매장명으로 검색 (예: 이웃집통통이)" onkeypress="if(event.key==='Enter')searchNaverPlace()">
-                            <button class="naver-search-btn" onclick="searchNaverPlace()">🔍 검색</button>
-                        </div>
-                        <div class="naver-search-results" id="naverSearchResults"></div>
-                        <div class="selected-place-info" id="selectedPlaceInfo">
-                            <div class="selected-place-name" id="selectedPlaceName"></div>
-                            <div class="selected-place-addr" id="selectedPlaceAddr"></div>
-                            <div class="selected-place-check">✓ 네이버 지도에서 확인된 장소</div>
-                        </div>
-                    </div>
+            <!-- Registration form (hidden until a place is selected) -->
+            <div class="store-register-section" id="registerSection" style="display: none;">
+                <div class="selected-place-info active" id="selectedPlaceInfo" style="margin: 0 0 16px;">
+                    <div class="selected-place-name" id="selectedPlaceName"></div>
+                    <div class="selected-place-addr" id="selectedPlaceAddr"></div>
+                    <div class="selected-place-check">✓ 지도에서 확인된 장소</div>
+                </div>
 
+                <div class="store-register-form active" id="storeRegisterForm">
                     <div class="register-row">
                         <div class="register-form-group">
                             <label>매장 표시 이름</label>
@@ -1640,7 +1638,7 @@
                     </div>
 
                     <button class="register-submit-btn" onclick="registerNewStore()">🏪 매장 등록 완료</button>
-                    <p class="register-notice">※ 네이버 지도에 등록된 실제 매장만 등록 가능합니다.<br>허위 등록 시 계정이 정지될 수 있습니다.</p>
+                    <p class="register-notice">※ 실제 매장만 등록 가능합니다. 허위 등록 시 계정이 정지될 수 있습니다.</p>
                 </div>
             </div>
         </div>
@@ -2778,64 +2776,100 @@
             showToast(getStoreById(storeId).name + ' 선택 완료!');
         }
 
+        // Trigger search button (force Kakao API search)
+        function searchAndRegister() {
+            const q = document.getElementById('storeSearchInput').value.trim();
+            if (!q) { showToast('매장명을 입력해주세요.'); return; }
+            if (q.length < 2) { showToast('2글자 이상 입력해주세요.'); return; }
+
+            // Filter existing
+            const qLower = q.toLowerCase();
+            const filtered = allStores.filter(s =>
+                s.name.toLowerCase().includes(qLower) ||
+                s.addr.toLowerCase().includes(qLower) ||
+                s.region.includes(qLower) ||
+                s.area.includes(qLower)
+            );
+
+            // Show loading
+            const container = document.getElementById('storeSelectList');
+            container.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
+
+            // Force Kakao search immediately
+            if (kakaoPlaces) {
+                kakaoPlaces.keywordSearch(q, function(data, status) {
+                    if (status === kakao.maps.services.Status.OK) {
+                        const kakaoResults = data.slice(0, 10).map(p => ({
+                            kakaoId: p.id,
+                            name: p.place_name,
+                            addr: p.road_address_name || p.address_name,
+                            category: p.category_group_name || p.category_name || '',
+                            phone: p.phone || '',
+                            lat: parseFloat(p.y),
+                            lng: parseFloat(p.x),
+                            placeUrl: p.place_url
+                        }));
+                        renderMixedResults(filtered, kakaoResults, q);
+                    } else {
+                        renderMixedResults(filtered, [], q);
+                    }
+                });
+            } else {
+                initKakaoPlaces();
+                setTimeout(() => {
+                    if (kakaoPlaces) searchAndRegister();
+                    else renderMixedResults(filtered, [], q);
+                }, 600);
+            }
+        }
+
         function selectKakaoPlace(placeData) {
-            // Auto-register this Kakao place as a new store
+            // Check if already registered
             let customStores = [];
             try {
                 customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
             } catch (e) { customStores = []; }
-
-            // Check if already registered by kakaoId
             const existing = customStores.find(s => s.kakaoId === placeData.kakaoId);
             if (existing) {
                 selectStore(existing.id);
                 return;
             }
 
-            // Generate new ID
-            const allIds = allStores.map(s => s.id).concat(customStores.map(s => s.id));
-            const newId = allIds.length > 0 ? Math.max(...allIds) + 1 : 100;
-
-            // Extract region from address
-            const regionMatch = (placeData.addr || '').match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
-            const region = regionMatch ? regionMatch[1] : '';
-
-            const newStore = {
-                id: newId,
+            // Show registration form with auto-filled data
+            selectedNaverPlace = {
                 kakaoId: placeData.kakaoId,
                 name: placeData.name,
                 addr: placeData.addr,
-                region: region,
-                area: region,
-                type: placeData.category || '카페',
-                menu: '버터떡',
-                price: '문의',
-                phone: placeData.phone || '',
                 lat: placeData.lat,
                 lng: placeData.lng,
-                placeUrl: placeData.placeUrl,
-                status: 'available',
-                stock: 0,
-                registeredAt: new Date().toISOString(),
-                registeredBy: currentUser ? (currentUser.email || currentUser.displayName || '') : ''
+                phone: placeData.phone,
+                placeUrl: placeData.placeUrl
             };
 
-            // Save to custom stores
-            customStores.push(newStore);
-            localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+            // Show selected place info
+            document.getElementById('selectedPlaceName').textContent = placeData.name;
+            document.getElementById('selectedPlaceAddr').textContent = placeData.addr;
+            document.getElementById('registerSection').style.display = 'block';
 
-            // Add to in-memory allStores
-            allStores.push({
-                id: newId,
-                name: newStore.name,
-                addr: newStore.addr,
-                region: newStore.region,
-                area: newStore.area
-            });
+            // Auto-fill form fields
+            document.getElementById('regStoreName').value = placeData.name;
+            document.getElementById('regStorePhone').value = placeData.phone || '';
 
-            // Select this store
-            selectStore(newId);
-            showToast('🎉 ' + placeData.name + ' 매장이 등록되었습니다!');
+            // Extract region from address
+            const regionMatch = (placeData.addr || '').match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
+            document.getElementById('regStoreRegion').value = regionMatch ? regionMatch[1] : '';
+
+            // Extract category/type
+            const cat = placeData.category || '';
+            if (cat.includes('카페')) document.getElementById('regStoreType').value = '카페';
+            else if (cat.includes('베이커리') || cat.includes('빵')) document.getElementById('regStoreType').value = '베이커리';
+            else if (cat.includes('디저트')) document.getElementById('regStoreType').value = '디저트 카페';
+            else if (cat.includes('음식점')) document.getElementById('regStoreType').value = '음식점';
+            else document.getElementById('regStoreType').value = cat.split(' > ').pop() || '카페';
+
+            // Scroll to form
+            document.getElementById('registerSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            showToast('매장 정보를 확인 후 등록해주세요!');
         }
 
         function applySelectedStore() {
@@ -2983,89 +3017,6 @@
         // ============================================
         let selectedNaverPlace = null;
 
-        function toggleRegisterForm() {
-            const form = document.getElementById('storeRegisterForm');
-            form.classList.toggle('active');
-        }
-
-        function searchNaverPlace() {
-            const query = document.getElementById('naverPlaceSearch').value.trim();
-            if (!query) {
-                showToast('검색어를 입력해주세요.');
-                return;
-            }
-
-            // Since we can't directly call Naver API from client without proxy,
-            // we simulate search with Naver Map link and let user confirm
-            const resultsEl = document.getElementById('naverSearchResults');
-            resultsEl.classList.add('active');
-
-            // Open Naver Map search in new tab for user to verify
-            const naverMapUrl = 'https://map.naver.com/p/search/' + encodeURIComponent(query);
-
-            resultsEl.innerHTML = `
-                <div style="padding: 14px; text-align: center;">
-                    <p style="font-size: 13px; color: var(--color-text-primary); margin-bottom: 10px;">
-                        <b>"${query}"</b> 검색 결과를 네이버 지도에서 확인하세요
-                    </p>
-                    <a href="${naverMapUrl}" target="_blank" rel="noopener"
-                       style="display: inline-block; padding: 10px 20px; background: #03C75A; color: white;
-                              border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 700;">
-                        🗺️ 네이버 지도에서 확인
-                    </a>
-                    <p style="font-size: 11px; color: var(--color-text-secondary); margin-top: 10px;">
-                        네이버 지도에서 매장을 확인한 후<br>아래 정보를 입력해주세요
-                    </p>
-                    <div style="margin-top: 12px; text-align: left;">
-                        <div class="register-form-group">
-                            <label>네이버 지도 주소 (도로명)</label>
-                            <input type="text" class="register-input" id="regNaverAddr" placeholder="네이버 지도에서 복사한 주소">
-                        </div>
-                        <button onclick="confirmNaverPlace('${query.replace(/'/g, "\\'")}')"
-                                style="width: 100%; padding: 10px; background: #03C75A; color: white; border: none;
-                                       border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">
-                            ✓ 주소 확인 완료
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function confirmNaverPlace(searchQuery) {
-            const addr = document.getElementById('regNaverAddr').value.trim();
-            if (!addr) {
-                showToast('네이버 지도에서 확인한 주소를 입력해주세요.');
-                return;
-            }
-
-            selectedNaverPlace = {
-                name: searchQuery,
-                addr: addr
-            };
-
-            // Auto-fill the store name
-            if (!document.getElementById('regStoreName').value) {
-                document.getElementById('regStoreName').value = searchQuery;
-            }
-
-            // Show confirmed info
-            const placeInfo = document.getElementById('selectedPlaceInfo');
-            document.getElementById('selectedPlaceName').textContent = searchQuery;
-            document.getElementById('selectedPlaceAddr').textContent = addr;
-            placeInfo.classList.add('active');
-
-            // Hide search results
-            document.getElementById('naverSearchResults').classList.remove('active');
-
-            // Try to extract region from address
-            const regionMatch = addr.match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
-            if (regionMatch && !document.getElementById('regStoreRegion').value) {
-                document.getElementById('regStoreRegion').value = regionMatch[1];
-            }
-
-            showToast('장소가 확인되었습니다!');
-        }
-
         function registerNewStore() {
             const name = document.getElementById('regStoreName').value.trim();
             const region = document.getElementById('regStoreRegion').value.trim();
@@ -3076,7 +3027,7 @@
 
             // Validate
             if (!selectedNaverPlace) {
-                showToast('먼저 네이버 지도에서 매장을 검색/확인해주세요.');
+                showToast('먼저 검색창에서 매장을 검색하고 선택해주세요.');
                 return;
             }
             if (!name) { showToast('매장 표시 이름을 입력해주세요.'); return; }
@@ -3096,6 +3047,7 @@
 
             const newStore = {
                 id: newId,
+                kakaoId: selectedNaverPlace.kakaoId || null,
                 name: name,
                 addr: selectedNaverPlace.addr,
                 region: region,
@@ -3104,6 +3056,9 @@
                 menu: menu || '버터떡',
                 price: price || '문의',
                 phone: phone || '',
+                lat: selectedNaverPlace.lat || null,
+                lng: selectedNaverPlace.lng || null,
+                placeUrl: selectedNaverPlace.placeUrl || null,
                 status: 'available',
                 stock: 0,
                 registeredAt: new Date().toISOString(),
@@ -3128,16 +3083,14 @@
 
             // Reset form
             selectedNaverPlace = null;
-            document.getElementById('storeRegisterForm').classList.remove('active');
-            document.getElementById('naverPlaceSearch').value = '';
+            document.getElementById('registerSection').style.display = 'none';
             document.getElementById('regStoreName').value = '';
             document.getElementById('regStoreRegion').value = '';
             document.getElementById('regStoreType').value = '';
             document.getElementById('regStoreMenu').value = '';
             document.getElementById('regStorePrice').value = '';
             document.getElementById('regStorePhone').value = '';
-            document.getElementById('selectedPlaceInfo').classList.remove('active');
-            document.getElementById('naverSearchResults').classList.remove('active');
+            document.getElementById('storeSearchInput').value = '';
 
             showToast('🎉 매장이 등록되었습니다!');
         }
