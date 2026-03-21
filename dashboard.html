@@ -1516,6 +1516,59 @@
             margin-top: 8px;
             line-height: 1.5;
         }
+
+        /* Real Place Search Results */
+        .search-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(212, 165, 116, 0.15);
+        }
+
+        .store-select-item-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .store-select-item-badge.registered {
+            background: rgba(107, 175, 123, 0.12);
+            color: var(--color-success);
+        }
+
+        .store-select-item-badge.kakao {
+            background: rgba(255, 225, 0, 0.15);
+            color: #997a00;
+        }
+
+        .store-select-item-category {
+            font-size: 10px;
+            color: var(--color-accent);
+            margin-top: 1px;
+        }
+
+        .search-loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--color-text-secondary);
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -1527,7 +1580,7 @@
                 <p>운영하시는 매장을 검색하거나 새로 등록하세요</p>
             </div>
             <div class="store-search-box">
-                <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 또는 지역으로 검색" oninput="filterStoreList()">
+                <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 검색 (실제 장소도 검색됩니다)" oninput="filterStoreList()">
             </div>
             <div class="store-select-list" id="storeSelectList"></div>
 
@@ -1838,6 +1891,9 @@
         <div class="toast" id="toast" style="display: none;"></div>
     </div>
 
+    <!-- Kakao Maps SDK for Place Search -->
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services&autoload=false"></script>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -2039,6 +2095,7 @@
         function initializeAuth() {
             isGuestMode = checkGuestMode();
             loadCustomStores();
+            initKakaoPlaces();
             const authLoading = document.getElementById('authLoading');
             const mainContent = document.getElementById('mainContent');
 
@@ -2551,25 +2608,150 @@
             document.getElementById('storeSelectOverlay').style.display = 'none';
         }
 
+        let searchDebounceTimer = null;
+        let kakaoPlaces = null;
+
+        function initKakaoPlaces() {
+            if (kakaoPlaces) return;
+            try {
+                if (window.kakao && window.kakao.maps) {
+                    kakao.maps.load(function() {
+                        kakaoPlaces = new kakao.maps.services.Places();
+                    });
+                }
+            } catch (e) {
+                console.warn('Kakao Places init failed:', e);
+            }
+        }
+
         function filterStoreList() {
-            const q = document.getElementById('storeSearchInput').value.trim().toLowerCase();
+            const q = document.getElementById('storeSearchInput').value.trim();
             if (!q) {
                 renderStoreList(allStores);
                 return;
             }
+
+            const qLower = q.toLowerCase();
+
+            // Filter existing stores
             const filtered = allStores.filter(s =>
-                s.name.toLowerCase().includes(q) ||
-                s.addr.toLowerCase().includes(q) ||
-                s.region.includes(q) ||
-                s.area.includes(q)
+                s.name.toLowerCase().includes(qLower) ||
+                s.addr.toLowerCase().includes(qLower) ||
+                s.region.includes(qLower) ||
+                s.area.includes(qLower)
             );
-            renderStoreList(filtered);
+
+            // Show existing matches first
+            renderMixedResults(filtered, [], q);
+
+            // Debounce Kakao API search
+            clearTimeout(searchDebounceTimer);
+            if (q.length >= 2) {
+                searchDebounceTimer = setTimeout(() => {
+                    searchKakaoPlaces(q, filtered);
+                }, 400);
+            }
+        }
+
+        function searchKakaoPlaces(query, existingResults) {
+            if (!kakaoPlaces) {
+                initKakaoPlaces();
+                // Retry after init
+                setTimeout(() => {
+                    if (kakaoPlaces) {
+                        kakaoPlaces.keywordSearch(query, function(data, status) {
+                            if (status === kakao.maps.services.Status.OK) {
+                                const kakaoResults = data.slice(0, 8).map(p => ({
+                                    kakaoId: p.id,
+                                    name: p.place_name,
+                                    addr: p.road_address_name || p.address_name,
+                                    category: p.category_group_name || '',
+                                    phone: p.phone || '',
+                                    lat: parseFloat(p.y),
+                                    lng: parseFloat(p.x),
+                                    placeUrl: p.place_url
+                                }));
+                                renderMixedResults(existingResults, kakaoResults, query);
+                            }
+                        });
+                    }
+                }, 500);
+                return;
+            }
+
+            kakaoPlaces.keywordSearch(query, function(data, status) {
+                if (status === kakao.maps.services.Status.OK) {
+                    const kakaoResults = data.slice(0, 8).map(p => ({
+                        kakaoId: p.id,
+                        name: p.place_name,
+                        addr: p.road_address_name || p.address_name,
+                        category: p.category_group_name || '',
+                        phone: p.phone || '',
+                        lat: parseFloat(p.y),
+                        lng: parseFloat(p.x),
+                        placeUrl: p.place_url
+                    }));
+                    renderMixedResults(existingResults, kakaoResults, query);
+                } else {
+                    renderMixedResults(existingResults, [], query);
+                }
+            });
+        }
+
+        function renderMixedResults(existingStores, kakaoResults, query) {
+            const container = document.getElementById('storeSelectList');
+            let html = '';
+
+            // Existing registered stores
+            if (existingStores.length > 0) {
+                html += '<div class="search-divider">등록된 매장</div>';
+                html += existingStores.map(s => `
+                    <div class="store-select-item" onclick="selectStore(${s.id})">
+                        <div class="store-select-item-icon">🏪</div>
+                        <div class="store-select-item-info">
+                            <div class="store-select-item-name">${s.name} <span class="store-select-item-badge registered">등록됨</span></div>
+                            <div class="store-select-item-addr">${s.addr}</div>
+                        </div>
+                        <div class="store-select-item-arrow">›</div>
+                    </div>
+                `).join('');
+            }
+
+            // Kakao real place results
+            if (kakaoResults.length > 0) {
+                // Filter out places already in our list
+                const existingNames = existingStores.map(s => s.name.toLowerCase());
+                const newKakao = kakaoResults.filter(k =>
+                    !existingNames.some(n => k.name.toLowerCase().includes(n) || n.includes(k.name.toLowerCase()))
+                );
+
+                if (newKakao.length > 0) {
+                    html += '<div class="search-divider">지도 검색 결과</div>';
+                    html += newKakao.map(k => `
+                        <div class="store-select-item" onclick="selectKakaoPlace(${JSON.stringify(k).replace(/"/g, '&quot;')})">
+                            <div class="store-select-item-icon">📍</div>
+                            <div class="store-select-item-info">
+                                <div class="store-select-item-name">${k.name} <span class="store-select-item-badge kakao">지도</span></div>
+                                <div class="store-select-item-addr">${k.addr}</div>
+                                ${k.category ? '<div class="store-select-item-category">' + k.category + '</div>' : ''}
+                            </div>
+                            <div class="store-select-item-arrow">+</div>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            if (!html) {
+                html = '<div style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 13px;">검색 결과가 없습니다.<br><span style="font-size: 11px;">2글자 이상 입력하면 실제 장소를 검색합니다.</span></div>';
+            }
+
+            container.innerHTML = html;
         }
 
         function renderStoreList(stores) {
             const container = document.getElementById('storeSelectList');
             if (stores.length === 0) {
-                container.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 13px;">검색 결과가 없습니다.</div>';
+                container.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 13px;">등록된 매장이 없습니다.<br><span style="font-size: 11px;">매장명을 검색해보세요.</span></div>';
                 return;
             }
             container.innerHTML = stores.map(s => `
@@ -2589,6 +2771,66 @@
             hideStoreSelector();
             applySelectedStore();
             showToast(getStoreById(storeId).name + ' 선택 완료!');
+        }
+
+        function selectKakaoPlace(placeData) {
+            // Auto-register this Kakao place as a new store
+            let customStores = [];
+            try {
+                customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+            } catch (e) { customStores = []; }
+
+            // Check if already registered by kakaoId
+            const existing = customStores.find(s => s.kakaoId === placeData.kakaoId);
+            if (existing) {
+                selectStore(existing.id);
+                return;
+            }
+
+            // Generate new ID
+            const allIds = allStores.map(s => s.id).concat(customStores.map(s => s.id));
+            const newId = allIds.length > 0 ? Math.max(...allIds) + 1 : 100;
+
+            // Extract region from address
+            const regionMatch = (placeData.addr || '').match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
+            const region = regionMatch ? regionMatch[1] : '';
+
+            const newStore = {
+                id: newId,
+                kakaoId: placeData.kakaoId,
+                name: placeData.name,
+                addr: placeData.addr,
+                region: region,
+                area: region,
+                type: placeData.category || '카페',
+                menu: '버터떡',
+                price: '문의',
+                phone: placeData.phone || '',
+                lat: placeData.lat,
+                lng: placeData.lng,
+                placeUrl: placeData.placeUrl,
+                status: 'available',
+                stock: 0,
+                registeredAt: new Date().toISOString(),
+                registeredBy: currentUser ? (currentUser.email || currentUser.displayName || '') : ''
+            };
+
+            // Save to custom stores
+            customStores.push(newStore);
+            localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+
+            // Add to in-memory allStores
+            allStores.push({
+                id: newId,
+                name: newStore.name,
+                addr: newStore.addr,
+                region: newStore.region,
+                area: newStore.area
+            });
+
+            // Select this store
+            selectStore(newId);
+            showToast('🎉 ' + placeData.name + ' 매장이 등록되었습니다!');
         }
 
         function applySelectedStore() {
