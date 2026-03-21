@@ -90,6 +90,16 @@
             object-fit: cover;
         }
 
+        .provider-badge {
+            display: inline-block;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
         .guest-badge {
             display: inline-block;
             background-color: rgba(0, 0, 0, 0.2);
@@ -554,6 +564,10 @@
                 font-size: 12px;
                 gap: 6px;
             }
+
+            .provider-badge {
+                font-size: 10px;
+            }
         }
     </style>
 </head>
@@ -569,7 +583,10 @@
             <div class="header-right">
                 <div class="user-profile" id="userProfile">
                     <div class="profile-photo" id="profilePhoto">👤</div>
-                    <span id="userName">사용자</span>
+                    <div id="userInfo">
+                        <span id="userName">사용자</span>
+                        <span class="provider-badge" id="providerBadge" style="display: none;"></span>
+                    </div>
                 </div>
                 <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
             </div>
@@ -681,6 +698,8 @@
 
         let currentStatus = 'available';
         let isGuestMode = false;
+        let currentAuthProvider = null; // Track current auth provider: 'google', 'kakao', 'naver', or null
+        let currentUser = null; // Store current user object
 
         // Check if user is in guest mode
         function checkGuestMode() {
@@ -688,21 +707,43 @@
             return params.get('guest') === 'true';
         }
 
-        // Update user profile display
-        function updateUserProfile(user) {
+        // Get provider badge display name
+        function getProviderBadgeText(provider) {
+            const providerMap = {
+                'google': 'Google',
+                'kakao': 'Kakao',
+                'naver': 'Naver'
+            };
+            return providerMap[provider] || provider;
+        }
+
+        // Update user profile display with auth provider badge
+        function updateUserProfile(user, provider) {
             const userProfileEl = document.getElementById('userProfile');
             const profilePhotoEl = document.getElementById('profilePhoto');
             const userNameEl = document.getElementById('userName');
+            const providerBadgeEl = document.getElementById('providerBadge');
 
             if (user) {
                 // User is logged in
-                userNameEl.textContent = user.displayName || user.email || '사용자';
+                const displayName = user.displayName || user.name || user.email || '사용자';
+                userNameEl.textContent = displayName;
 
-                if (user.photoURL) {
-                    profilePhotoEl.innerHTML = `<img src="${user.photoURL}" alt="프로필">`;
+                // Display profile photo
+                if (user.photoURL || user.photo_url) {
+                    const photoUrl = user.photoURL || user.photo_url;
+                    profilePhotoEl.innerHTML = `<img src="${photoUrl}" alt="프로필">`;
                 } else {
-                    const initials = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+                    const initials = (user.displayName || user.name || user.email || 'U').charAt(0).toUpperCase();
                     profilePhotoEl.textContent = initials;
+                }
+
+                // Show provider badge
+                if (provider) {
+                    providerBadgeEl.textContent = getProviderBadgeText(provider);
+                    providerBadgeEl.style.display = 'inline-block';
+                } else {
+                    providerBadgeEl.style.display = 'none';
                 }
 
                 document.getElementById('guestModeAlert').style.display = 'none';
@@ -710,20 +751,76 @@
                 // Guest mode
                 userNameEl.textContent = '체험 모드';
                 profilePhotoEl.textContent = '👤';
+                providerBadgeEl.style.display = 'none';
                 document.getElementById('guestModeAlert').style.display = 'block';
             }
         }
 
-        // Handle logout
+        // Check for Kakao/Naver social login in localStorage
+        function checkSocialLogin() {
+            try {
+                const socialUserStr = localStorage.getItem('socialUser');
+                if (socialUserStr) {
+                    const socialUser = JSON.parse(socialUserStr);
+                    if (socialUser && socialUser.provider && socialUser.user) {
+                        return {
+                            provider: socialUser.provider,
+                            user: socialUser.user
+                        };
+                    }
+                }
+            } catch (error) {
+                console.error('Error parsing social user data:', error);
+            }
+            return null;
+        }
+
+        // Handle logout for all providers
         function handleLogout() {
             if (confirm('로그아웃하시겠습니까?')) {
-                firebase.auth().signOut().then(() => {
-                    window.location.href = 'owner.html';
-                }).catch(error => {
+                try {
+                    // Firebase logout (for Google)
+                    if (currentAuthProvider === 'google') {
+                        firebase.auth().signOut().then(() => {
+                            clearAllAuth();
+                        }).catch(error => {
+                            console.error('Firebase 로그아웃 오류:', error);
+                            clearAllAuth();
+                        });
+                    }
+                    // Kakao logout
+                    else if (currentAuthProvider === 'kakao') {
+                        // Call Kakao logout if available
+                        if (window.Kakao && window.Kakao.Auth) {
+                            window.Kakao.Auth.logout(() => {
+                                clearAllAuth();
+                            });
+                        } else {
+                            clearAllAuth();
+                        }
+                    }
+                    // Naver logout
+                    else if (currentAuthProvider === 'naver') {
+                        // Naver doesn't require explicit logout; just clear localStorage
+                        clearAllAuth();
+                    }
+                    // Guest mode
+                    else if (isGuestMode) {
+                        clearAllAuth();
+                    } else {
+                        clearAllAuth();
+                    }
+                } catch (error) {
                     console.error('로그아웃 오류:', error);
-                    window.location.href = 'owner.html';
-                });
+                    clearAllAuth();
+                }
             }
+        }
+
+        // Clear all authentication and redirect
+        function clearAllAuth() {
+            localStorage.removeItem('socialUser');
+            window.location.href = 'owner.html';
         }
 
         // Initialize authentication state
@@ -736,23 +833,38 @@
             authLoading.style.display = 'flex';
             mainContent.style.display = 'none';
 
-            // Listen for auth state changes
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    // User is logged in
-                    updateUserProfile(user);
-                    authLoading.style.display = 'none';
-                    mainContent.style.display = 'block';
-                    initializeDashboard();
-                } else if (isGuestMode) {
-                    // Guest mode allowed
-                    updateUserProfile(null);
+            // First check Firebase auth
+            firebase.auth().onAuthStateChanged(function(firebaseUser) {
+                if (firebaseUser) {
+                    // Firebase user logged in (Google)
+                    currentAuthProvider = 'google';
+                    currentUser = firebaseUser;
+                    updateUserProfile(firebaseUser, 'google');
                     authLoading.style.display = 'none';
                     mainContent.style.display = 'block';
                     initializeDashboard();
                 } else {
-                    // Not logged in and not guest mode - redirect to owner.html
-                    window.location.href = 'owner.html';
+                    // No Firebase user, check for social login (Kakao/Naver)
+                    const socialLogin = checkSocialLogin();
+                    if (socialLogin) {
+                        currentAuthProvider = socialLogin.provider;
+                        currentUser = socialLogin.user;
+                        updateUserProfile(socialLogin.user, socialLogin.provider);
+                        authLoading.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        initializeDashboard();
+                    } else if (isGuestMode) {
+                        // Guest mode allowed
+                        currentAuthProvider = null;
+                        currentUser = null;
+                        updateUserProfile(null, null);
+                        authLoading.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        initializeDashboard();
+                    } else {
+                        // Not logged in and not guest mode - redirect to owner.html
+                        window.location.href = 'owner.html';
+                    }
                 }
             });
         }

@@ -481,7 +481,7 @@
                 </button>
 
                 <!-- Kakao Button -->
-                <button class="social-button kakao-button" onclick="handleUnavailable('카카오')">
+                <button class="social-button kakao-button" id="kakaoBtn" onclick="handleKakaoLogin()">
                     <div class="button-icon">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path fill="currentColor" d="M12 2C6.48 2 2 5.58 2 10c0 2.85 1.51 5.35 3.85 6.85-.15 1.17-.84 3.6-.98 4.21-.2.88.44 1.42 1.27.87 1.26-.84 3.37-2.25 4.59-3.1 1.04.08 2.12.12 3.27.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
@@ -491,7 +491,7 @@
                 </button>
 
                 <!-- Naver Button -->
-                <button class="social-button naver-button" onclick="handleUnavailable('네이버')">
+                <button class="social-button naver-button" id="naverBtn" onclick="handleNaverLogin()">
                     <div class="button-icon">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <rect width="24" height="24" fill="none"/>
@@ -527,6 +527,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
+    <!-- Kakao SDK -->
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"></script>
+
+    <!-- Naver SDK -->
+    <script src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.2.js"></script>
+
     <script>
         // Firebase Configuration
         const firebaseConfig = {
@@ -543,16 +549,77 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
 
+        // Kakao Configuration
+        const KAKAO_KEY = 'c8bac9e41374ae0bfbffbef06cd2407b';
+        const KAKAO_REDIRECT_URI = 'https://trendesert-web.github.io/buttertteokmaps/owner.html';
+
+        // Initialize Kakao
+        if (Kakao && !Kakao.isInitialized()) {
+            Kakao.init(KAKAO_KEY);
+        }
+
+        // Naver Configuration
+        const NAVER_CLIENT_ID = 'yEh4vAG8Y13DQHujjJCa';
+        const NAVER_CALLBACK_URL = 'https://trendesert-web.github.io/buttertteokmaps/owner.html';
+
         // Check authentication state on page load
         window.addEventListener('DOMContentLoaded', function() {
-            auth.onAuthStateChanged(function(user) {
-                if (user) {
+            // Check for stored user info from any provider
+            const storedUser = localStorage.getItem('authUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
                     displayLoggedInState(user);
-                } else {
+                } catch (e) {
                     displayLoggedOutState();
                 }
-            });
+            } else {
+                // Check Firebase auth state
+                auth.onAuthStateChanged(function(user) {
+                    if (user) {
+                        const userData = {
+                            uid: user.uid,
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL,
+                            provider: 'google'
+                        };
+                        displayLoggedInState(userData);
+                    } else {
+                        displayLoggedOutState();
+                    }
+                });
+            }
+
+            // Check for Kakao callback code
+            checkKakaoCallback();
+
+            // Check for Naver callback token
+            checkNaverCallback();
         });
+
+        // Check for Kakao callback
+        function checkKakaoCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+
+            if (code) {
+                // Kakao auth code received, get access token
+                getKakaoAccessToken(code);
+            }
+        }
+
+        // Check for Naver callback
+        function checkNaverCallback() {
+            const hash = window.location.hash;
+            if (hash.includes('access_token')) {
+                // Parse the hash for access token
+                const match = hash.match(/access_token=([^&]*)/);
+                if (match && match[1]) {
+                    getNaverUserInfo(match[1]);
+                }
+            }
+        }
 
         // Display logged in state
         function displayLoggedInState(user) {
@@ -564,7 +631,8 @@
             guestButton.style.display = 'none';
             logoutBtn.style.display = 'block';
 
-            showAlert(`환영합니다, ${user.displayName || user.email}!`, 'success');
+            const greeting = user.displayName || user.email || '사용자';
+            showAlert(`환영합니다, ${greeting}!`, 'success');
 
             setTimeout(() => {
                 redirectToDashboard(user);
@@ -593,8 +661,15 @@
             auth.signInWithPopup(provider)
                 .then(function(result) {
                     const user = result.user;
-                    storeUserInfo(user);
-                    displayLoggedInState(user);
+                    const userData = {
+                        uid: user.uid,
+                        email: user.email,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        provider: 'google'
+                    };
+                    storeUserInfo(userData);
+                    displayLoggedInState(userData);
                 })
                 .catch(function(error) {
                     googleBtn.disabled = false;
@@ -612,9 +687,125 @@
                 });
         }
 
-        // Handle unavailable login methods
-        function handleUnavailable(platform) {
-            showAlert(`${platform}로 시작하기는 준비 중입니다. Google 로그인을 이용해주세요.`, 'error');
+        // Handle Kakao Login
+        function handleKakaoLogin() {
+            const kakaoBtn = document.getElementById('kakaoBtn');
+            kakaoBtn.disabled = true;
+            kakaoBtn.innerHTML = '<div class="loading-spinner"></div><span>로그인 중...</span>';
+
+            Kakao.Auth.login({
+                success: function(response) {
+                    // Get user info after successful login
+                    Kakao.API.request({
+                        url: '/v2/user/me',
+                        success: function(response) {
+                            const kakaoUser = {
+                                uid: 'kakao_' + response.id,
+                                email: response.kakao_account?.email || '',
+                                displayName: response.kakao_account?.profile?.nickname || 'Kakao User',
+                                photoURL: response.kakao_account?.profile?.profile_image_url || '',
+                                provider: 'kakao'
+                            };
+                            storeUserInfo(kakaoUser);
+                            displayLoggedInState(kakaoUser);
+                        },
+                        fail: function(error) {
+                            kakaoBtn.disabled = false;
+                            kakaoBtn.innerHTML = '<div class="button-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M12 2C6.48 2 2 5.58 2 10c0 2.85 1.51 5.35 3.85 6.85-.15 1.17-.84 3.6-.98 4.21-.2.88.44 1.42 1.27.87 1.26-.84 3.37-2.25 4.59-3.1 1.04.08 2.12.12 3.27.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg></div><span>카카오로 시작하기</span>';
+                            showAlert('사용자 정보 조회 실패: ' + error, 'error');
+                        }
+                    });
+                },
+                fail: function(error) {
+                    kakaoBtn.disabled = false;
+                    kakaoBtn.innerHTML = '<div class="button-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M12 2C6.48 2 2 5.58 2 10c0 2.85 1.51 5.35 3.85 6.85-.15 1.17-.84 3.6-.98 4.21-.2.88.44 1.42 1.27.87 1.26-.84 3.37-2.25 4.59-3.1 1.04.08 2.12.12 3.27.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg></div><span>카카오로 시작하기</span>';
+                    let errorMessage = '카카오 로그인 실패: ';
+                    if (error && error.message) {
+                        errorMessage += error.message;
+                    } else {
+                        errorMessage += '다시 시도해주세요.';
+                    }
+                    showAlert(errorMessage, 'error');
+                }
+            });
+        }
+
+        // Get Kakao access token
+        function getKakaoAccessToken(code) {
+            const kakaoBtn = document.getElementById('kakaoBtn');
+            kakaoBtn.disabled = true;
+            kakaoBtn.innerHTML = '<div class="loading-spinner"></div><span>로그인 중...</span>';
+
+            // The SDK handles this, just proceed with getting user info
+            Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(response) {
+                    const kakaoUser = {
+                        uid: 'kakao_' + response.id,
+                        email: response.kakao_account?.email || '',
+                        displayName: response.kakao_account?.profile?.nickname || 'Kakao User',
+                        photoURL: response.kakao_account?.profile?.profile_image_url || '',
+                        provider: 'kakao'
+                    };
+                    storeUserInfo(kakaoUser);
+                    displayLoggedInState(kakaoUser);
+                },
+                fail: function(error) {
+                    kakaoBtn.disabled = false;
+                    kakaoBtn.innerHTML = '<div class="button-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M12 2C6.48 2 2 5.58 2 10c0 2.85 1.51 5.35 3.85 6.85-.15 1.17-.84 3.6-.98 4.21-.2.88.44 1.42 1.27.87 1.26-.84 3.37-2.25 4.59-3.1 1.04.08 2.12.12 3.27.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg></div><span>카카오로 시작하기</span>';
+                    showAlert('사용자 정보 조회 실패', 'error');
+                }
+            });
+        }
+
+        // Handle Naver Login
+        function handleNaverLogin() {
+            const naverBtn = document.getElementById('naverBtn');
+            naverBtn.disabled = true;
+            naverBtn.innerHTML = '<div class="loading-spinner"></div><span>로그인 중...</span>';
+
+            // Use implicit grant flow
+            const state = 'naver_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('naver_state', state);
+
+            const naverAuthURL = `https://nid.naver.com/oauth2.0/authorize?client_id=${NAVER_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(NAVER_CALLBACK_URL)}&state=${state}`;
+            window.location.href = naverAuthURL;
+        }
+
+        // Get Naver user info
+        function getNaverUserInfo(accessToken) {
+            const naverBtn = document.getElementById('naverBtn');
+            naverBtn.disabled = true;
+            naverBtn.innerHTML = '<div class="loading-spinner"></div><span>로그인 중...</span>';
+
+            fetch('https://openapi.naver.com/v1/nid/me', {
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.resultcode === '00' && data.response) {
+                    const naverUser = {
+                        uid: 'naver_' + data.response.id,
+                        email: data.response.email || '',
+                        displayName: data.response.name || data.response.nickname || 'Naver User',
+                        photoURL: data.response.profile_image || '',
+                        provider: 'naver'
+                    };
+                    storeUserInfo(naverUser);
+                    displayLoggedInState(naverUser);
+                } else {
+                    naverBtn.disabled = false;
+                    naverBtn.innerHTML = '<div class="button-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-size="16" fill="white">N</text></svg></div><span>네이버로 시작하기</span>';
+                    showAlert('사용자 정보 조회 실패', 'error');
+                }
+            })
+            .catch(error => {
+                naverBtn.disabled = false;
+                naverBtn.innerHTML = '<div class="button-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-size="16" fill="white">N</text></svg></div><span>네이버로 시작하기</span>';
+                showAlert('네이버 로그인 실패: ' + error.message, 'error');
+            });
         }
 
         // Handle Guest Login
@@ -626,28 +817,65 @@
         // Handle Logout
         function handleLogout() {
             if (confirm('정말로 로그아웃하시겠습니까?')) {
-                auth.signOut()
-                    .then(function() {
-                        localStorage.removeItem('firebaseUser');
-                        localStorage.removeItem('guestMode');
-                        displayLoggedOutState();
-                        showAlert('로그아웃되었습니다.', 'success');
-                    })
-                    .catch(function(error) {
-                        showAlert('로그아웃 실패: ' + error.message, 'error');
-                    });
+                // Get current user provider
+                const storedUser = localStorage.getItem('authUser');
+                let provider = 'google';
+                if (storedUser) {
+                    try {
+                        const user = JSON.parse(storedUser);
+                        provider = user.provider || 'google';
+                    } catch (e) {
+                        // Use default
+                    }
+                }
+
+                // Handle logout based on provider
+                if (provider === 'google') {
+                    auth.signOut()
+                        .then(function() {
+                            clearAuthData();
+                        })
+                        .catch(function(error) {
+                            showAlert('로그아웃 실패: ' + error.message, 'error');
+                        });
+                } else if (provider === 'kakao') {
+                    if (Kakao && Kakao.Auth) {
+                        Kakao.Auth.logout(function() {
+                            clearAuthData();
+                        });
+                    } else {
+                        clearAuthData();
+                    }
+                } else if (provider === 'naver') {
+                    // Naver logout
+                    clearAuthData();
+                } else {
+                    clearAuthData();
+                }
             }
+        }
+
+        // Clear authentication data
+        function clearAuthData() {
+            localStorage.removeItem('authUser');
+            localStorage.removeItem('firebaseUser');
+            localStorage.removeItem('guestMode');
+            displayLoggedOutState();
+            showAlert('로그아웃되었습니다.', 'success');
         }
 
         // Store user information in localStorage
         function storeUserInfo(user) {
-            const userData = {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL
-            };
-            localStorage.setItem('firebaseUser', JSON.stringify(userData));
+            localStorage.setItem('authUser', JSON.stringify(user));
+            // Also keep for backward compatibility
+            if (user.provider === 'google') {
+                localStorage.setItem('firebaseUser', JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                }));
+            }
         }
 
         // Redirect to dashboard
