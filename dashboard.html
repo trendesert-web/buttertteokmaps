@@ -1114,7 +1114,7 @@
             width: 100%;
             max-width: 420px;
             max-height: 85vh;
-            overflow: hidden;
+            overflow-y: auto;
             box-shadow: 0 20px 60px rgba(45, 32, 22, 0.2);
             display: flex;
             flex-direction: column;
@@ -1322,6 +1322,9 @@
         .store-register-section {
             padding: 16px 20px;
             border-top: 1px solid rgba(212, 165, 116, 0.15);
+            overflow-y: auto;
+            flex-shrink: 1;
+            min-height: 0;
         }
 
         .store-register-toggle {
@@ -1612,7 +1615,7 @@
                     <div style="background: #FFF8F0; border: 1.5px solid #D4A574; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
                         <h4 style="margin: 0 0 6px; font-size: 14px; color: #8B5E3C;">🔍 주소 검색</h4>
                         <p style="margin: 0 0 12px; font-size: 11px; color: #999;">상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.</p>
-                        <div id="postcodeEmbed" style="width: 100%; height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid #E8D5C4;"></div>
+                        <div id="postcodeEmbed" style="width: 100%; height: 300px; border-radius: 12px; overflow: hidden; border: 1px solid #E8D5C4;"></div>
                     </div>
 
                     <!-- 선택된 장소 정보 -->
@@ -3095,6 +3098,20 @@
         // 등록 폼 - 네이버 지도 검색 + 다음 주소 검색
         // ============================================
 
+        // 주소 입력 필드 클릭 시 우편번호 검색 다시 열기
+        function openPostcodeSearch() {
+            const embedEl = document.getElementById('postcodeEmbed');
+            if (embedEl) {
+                embedEl.style.display = 'block';
+                embedEl.parentElement.querySelector('h4').textContent = '🔍 주소 검색';
+                embedEl.parentElement.querySelector('p').textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
+                embedPostcodeSearch();
+                setTimeout(function() {
+                    embedEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            }
+        }
+
         // 다음 주소 검색 - 폼 안에 내장 (embed)
         function embedPostcodeSearch() {
             const container = document.getElementById('postcodeEmbed');
@@ -3136,6 +3153,10 @@
                     container.parentElement.querySelector('p').textContent = addr;
 
                     showToast('주소가 입력되었습니다!');
+                    // 주소 선택 후 폼 입력 필드로 스크롤
+                    setTimeout(function() {
+                        document.getElementById('registerFormTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 200);
                 },
                 width: '100%',
                 height: '100%'
@@ -3166,9 +3187,14 @@
             embedEl.parentElement.querySelector('h4').textContent = '🔍 주소 검색';
             embedEl.parentElement.querySelector('p').textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
             section.style.display = 'block';
-            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // 모달 스크롤을 등록 섹션으로 이동
+            setTimeout(function() {
+                const modal = document.querySelector('.store-select-modal');
+                if (modal) modal.scrollTop = modal.scrollHeight;
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
             // 약간의 딜레이 후 embed (DOM 렌더링 대기)
-            setTimeout(embedPostcodeSearch, 200);
+            setTimeout(embedPostcodeSearch, 300);
         }
 
         function registerNewStore() {
