@@ -1114,7 +1114,7 @@
             width: 100%;
             max-width: 420px;
             max-height: 85vh;
-            overflow-y: auto;
+            overflow: hidden;
             box-shadow: 0 20px 60px rgba(45, 32, 22, 0.2);
             display: flex;
             flex-direction: column;
@@ -1320,10 +1320,10 @@
 
         /* New Store Registration */
         .store-register-section {
-            padding: 16px 20px;
+            padding: 0;
             border-top: 1px solid rgba(212, 165, 116, 0.15);
             overflow-y: auto;
-            flex-shrink: 1;
+            flex: 1;
             min-height: 0;
         }
 
@@ -1600,7 +1600,7 @@
             <div class="store-select-list" id="storeSelectList"></div>
 
             <!-- 신규 매장 직접 등록 버튼 -->
-            <div style="padding: 12px 20px;">
+            <div id="manualRegisterBtn" style="padding: 12px 20px;">
                 <button onclick="showManualRegister()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #D4A574, #8B5E3C); color: white; border: none; border-radius: 14px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(139,94,60,0.3);">
                     📝 신규 매장 직접 등록하기
                 </button>
@@ -1609,7 +1609,12 @@
 
             <!-- 매장 정보 입력 폼 -->
             <div class="store-register-section" id="registerSection" style="display: none;">
-                <div style="padding: 0 20px 20px;">
+                <!-- 뒤로가기 헤더 -->
+                <div style="padding: 16px 20px 12px; border-bottom: 1px solid rgba(212,165,116,0.15); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; background: var(--color-bg); z-index: 2;">
+                    <button onclick="hideManualRegister()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 8px; color: #8B5E3C;">← </button>
+                    <h3 style="margin: 0; font-size: 16px; color: #8B5E3C; font-weight: 700;">📝 신규 매장 등록</h3>
+                </div>
+                <div style="padding: 16px 20px 20px;">
 
                     <!-- 🔍 주소 검색 (인라인 내장형) -->
                     <div style="background: #FFF8F0; border: 1.5px solid #D4A574; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
@@ -3164,37 +3169,47 @@
         }
 
         function showManualRegister() {
+            // 검색창, 매장 리스트, 등록 버튼 숨기기
+            document.querySelector('.store-search-box').style.display = 'none';
+            document.getElementById('storeSelectList').style.display = 'none';
+            document.getElementById('manualRegisterBtn').style.display = 'none';
+
+            // 헤더 텍스트 변경
+            document.querySelector('.store-select-header h2').textContent = '📝 신규 매장 등록';
+            document.querySelector('.store-select-header p').textContent = '새로운 매장 정보를 입력해주세요';
+
+            // 폼 초기화
             const section = document.getElementById('registerSection');
-            if (section.style.display !== 'none') {
-                section.style.display = 'none';
-                return;
-            }
             selectedNaverPlace = { name: '', addr: '' };
             document.getElementById('selectedPlaceInfo').style.display = 'none';
             document.getElementById('registerFormTitle').textContent = '📋 매장 정보를 입력해주세요';
-            document.getElementById('regStoreName').value = '';
-            document.getElementById('regStoreAddr').value = '';
-            document.getElementById('regStoreRegion').value = '';
-            document.getElementById('regStoreType').value = '';
-            document.getElementById('regStoreMenu').value = '';
-            document.getElementById('regStorePrice').value = '';
-            document.getElementById('regStorePhone').value = '';
-            document.getElementById('regStorePassword').value = '';
-            document.getElementById('regStorePasswordConfirm').value = '';
+            ['regStoreName','regStoreAddr','regStoreRegion','regStoreType','regStoreMenu','regStorePrice','regStorePhone','regStorePassword','regStorePasswordConfirm'].forEach(function(id) {
+                document.getElementById(id).value = '';
+            });
+
             // 주소 검색 영역 초기화
             const embedEl = document.getElementById('postcodeEmbed');
             embedEl.style.display = 'block';
             embedEl.parentElement.querySelector('h4').textContent = '🔍 주소 검색';
             embedEl.parentElement.querySelector('p').textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
-            section.style.display = 'block';
-            // 모달 스크롤을 등록 섹션으로 이동
-            setTimeout(function() {
-                const modal = document.querySelector('.store-select-modal');
-                if (modal) modal.scrollTop = modal.scrollHeight;
-                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
-            // 약간의 딜레이 후 embed (DOM 렌더링 대기)
-            setTimeout(embedPostcodeSearch, 300);
+
+            section.style.display = 'flex';
+            section.style.flexDirection = 'column';
+            setTimeout(embedPostcodeSearch, 200);
+        }
+
+        function hideManualRegister() {
+            // 등록 폼 숨기기
+            document.getElementById('registerSection').style.display = 'none';
+
+            // 검색창, 매장 리스트, 등록 버튼 다시 보이기
+            document.querySelector('.store-search-box').style.display = '';
+            document.getElementById('storeSelectList').style.display = '';
+            document.getElementById('manualRegisterBtn').style.display = '';
+
+            // 헤더 원복
+            document.querySelector('.store-select-header h2').textContent = '🏪 매장을 선택해주세요';
+            document.querySelector('.store-select-header p').textContent = '운영하시는 매장을 검색하거나 새로 등록하세요';
         }
 
         function registerNewStore() {
