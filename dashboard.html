@@ -1608,24 +1608,11 @@
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <div style="padding: 0 20px 20px;">
 
-                    <!-- 🔍 장소 검색 영역 -->
+                    <!-- 🔍 주소 검색 (인라인 내장형) -->
                     <div style="background: #FFF8F0; border: 1.5px solid #D4A574; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
-                        <h4 style="margin: 0 0 8px; font-size: 14px; color: #8B5E3C;">🔍 매장 찾기</h4>
-
-                        <!-- 네이버 지도 검색 -->
-                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                            <input type="text" id="regPlaceSearch" placeholder="상호명 입력 (예: 안다미로, 버터떡)"
-                                   onkeypress="if(event.key==='Enter'){event.preventDefault(); openNaverMapSearch();}"
-                                   style="flex: 1; padding: 12px 14px; border: 1.5px solid #E8D5C4; border-radius: 12px; font-size: 13px; font-family: inherit; outline: none; background: white;">
-                            <button onclick="openNaverMapSearch()" style="flex-shrink: 0; padding: 12px 14px; background: #03C75A; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap;">🗺️ 네이버지도</button>
-                        </div>
-                        <p style="margin: 0 0 12px; font-size: 11px; color: #999; text-align: center;">네이버 지도에서 매장을 확인한 후, 아래 버튼으로 주소를 입력하세요</p>
-
-                        <!-- 주소 검색 버튼 -->
-                        <button onclick="openPostcodeSearch()" style="width: 100%; padding: 13px; background: white; border: 1.5px solid #D4A574; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; color: #8B5E3C; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            📮 주소 검색 (도로명/지번)
-                        </button>
-                        <p style="margin: 4px 0 0; font-size: 11px; color: #aaa; text-align: center;">클릭하면 주소 검색창이 열립니다 → 선택하면 자동입력!</p>
+                        <h4 style="margin: 0 0 6px; font-size: 14px; color: #8B5E3C;">🔍 주소 검색</h4>
+                        <p style="margin: 0 0 12px; font-size: 11px; color: #999;">상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.</p>
+                        <div id="postcodeEmbed" style="width: 100%; height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid #E8D5C4;"></div>
                     </div>
 
                     <!-- 선택된 장소 정보 -->
@@ -2929,7 +2916,6 @@
             document.getElementById('registerSection').style.display = 'block';
 
             // Auto-fill form fields
-            document.getElementById('regPlaceSearch').value = placeData.name;
             document.getElementById('regStoreName').value = placeData.name;
             document.getElementById('regStoreAddr').value = placeData.addr || '';
             document.getElementById('regStoreAddr').removeAttribute('readonly');
@@ -3109,21 +3095,11 @@
         // 등록 폼 - 네이버 지도 검색 + 다음 주소 검색
         // ============================================
 
-        // 네이버 지도에서 검색 (새 탭)
-        function openNaverMapSearch() {
-            const q = document.getElementById('regPlaceSearch').value.trim();
-            if (!q) {
-                showToast('상호명을 입력해주세요.');
-                document.getElementById('regPlaceSearch').focus();
-                return;
-            }
-            const url = 'https://map.naver.com/p/search/' + encodeURIComponent(q);
-            window.open(url, '_blank');
-            showToast('네이버 지도에서 매장을 확인 후\n📮 주소 검색 버튼을 눌러주세요!');
-        }
-
-        // 다음 주소 검색 - API키 불필요, 100% 작동
-        function openPostcodeSearch() {
+        // 다음 주소 검색 - 폼 안에 내장 (embed)
+        function embedPostcodeSearch() {
+            const container = document.getElementById('postcodeEmbed');
+            if (!container) return;
+            container.innerHTML = '';
             new daum.Postcode({
                 oncomplete: function(data) {
                     const addr = data.roadAddress || data.jibunAddress;
@@ -3154,9 +3130,16 @@
                     document.getElementById('selectedPlaceName').textContent = buildingName || '주소 입력 완료';
                     document.getElementById('selectedPlaceAddr').textContent = addr;
 
-                    showToast('주소가 입력되었습니다! ✅');
-                }
-            }).open();
+                    // 검색창 숨기고 결과 표시
+                    container.style.display = 'none';
+                    container.parentElement.querySelector('h4').textContent = '✅ 주소 선택 완료';
+                    container.parentElement.querySelector('p').textContent = addr;
+
+                    showToast('주소가 입력되었습니다!');
+                },
+                width: '100%',
+                height: '100%'
+            }).embed(container);
         }
 
         function showManualRegister() {
@@ -3168,7 +3151,6 @@
             selectedNaverPlace = { name: '', addr: '' };
             document.getElementById('selectedPlaceInfo').style.display = 'none';
             document.getElementById('registerFormTitle').textContent = '📋 매장 정보를 입력해주세요';
-            document.getElementById('regPlaceSearch').value = '';
             document.getElementById('regStoreName').value = '';
             document.getElementById('regStoreAddr').value = '';
             document.getElementById('regStoreRegion').value = '';
@@ -3178,8 +3160,15 @@
             document.getElementById('regStorePhone').value = '';
             document.getElementById('regStorePassword').value = '';
             document.getElementById('regStorePasswordConfirm').value = '';
+            // 주소 검색 영역 초기화
+            const embedEl = document.getElementById('postcodeEmbed');
+            embedEl.style.display = 'block';
+            embedEl.parentElement.querySelector('h4').textContent = '🔍 주소 검색';
+            embedEl.parentElement.querySelector('p').textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
             section.style.display = 'block';
             section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            // 약간의 딜레이 후 embed (DOM 렌더링 대기)
+            setTimeout(embedPostcodeSearch, 200);
         }
 
         function registerNewStore() {
