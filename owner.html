@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상하이버터떡맵 - 사장님 전용 로그인</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #FFF8E7 0%, #F5E6D3 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            color: #8B6914;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            color: #E8A838;
+            transform: translateX(-4px);
+        }
+
+        .settings-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 50%;
+        }
+
+        .settings-icon:hover {
+            background-color: rgba(232, 168, 56, 0.1);
+            transform: rotate(20deg);
+        }
+
+        .settings-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: #8B6914;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 420px;
+            width: 100%;
+            margin-top: 60px;
+            text-align: center;
+        }
+
+        .title-section {
+            margin-bottom: 50px;
+        }
+
+        .main-title {
+            font-size: 48px;
+            font-weight: 900;
+            color: #8B6914;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Login Card */
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .login-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .social-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .social-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Google Button */
+        .google-button {
+            background-color: #FFFFFF;
+            color: #1F2937;
+            border: 1px solid #E5E7EB;
+        }
+
+        .google-button:hover {
+            background-color: #F9FAFB;
+            border-color: #D1D5DB;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Kakao Button */
+        .kakao-button {
+            background-color: #FEE500;
+            color: #000000;
+        }
+
+        .kakao-button:hover {
+            background-color: #FDD835;
+            box-shadow: 0 4px 16px rgba(254, 229, 0, 0.3);
+        }
+
+        /* Naver Button */
+        .naver-button {
+            background-color: #03C75A;
+            color: #FFFFFF;
+        }
+
+        .naver-button:hover {
+            background-color: #05B34E;
+            box-shadow: 0 4px 16px rgba(3, 199, 90, 0.3);
+        }
+
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .button-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Guest Button */
+        .guest-button {
+            background-color: #F3F4F6;
+            color: #374151;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .guest-button:hover {
+            background-color: #E5E7EB;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .guest-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Links Section */
+        .links-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .link-item {
+            color: #6B7280;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .link-item:hover {
+            color: #E8A838;
+            text-decoration: underline;
+        }
+
+        .faq-link::before {
+            content: "❓ ";
+        }
+
+        .support-link::before {
+            content: "💬 ";
+        }
+
+        /* Footer Message */
+        .footer-message {
+            font-size: 15px;
+            color: #666;
+            margin-top: 40px;
+        }
+
+        .heart {
+            color: #E8A838;
+            display: inline-block;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .developer-support {
+            color: #E8A838;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .developer-support:hover {
+            color: #D49324;
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .container {
+                margin-top: 70px;
+            }
+
+            .main-title {
+                font-size: 40px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .login-card {
+                padding: 30px 24px;
+            }
+
+            .social-button {
+                padding: 13px 16px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-title {
+                font-size: 36px;
+            }
+
+            .subtitle {
+                font-size: 15px;
+            }
+
+            .login-card {
+                padding: 24px 20px;
+                border-radius: 16px;
+            }
+
+            .social-button {
+                padding: 12px 14px;
+                font-size: 14px;
+                gap: 10px;
+            }
+
+            .button-icon {
+                width: 18px;
+                height: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <a href="index.html" class="back-button">← 지도로 돌아가기</a>
+        <div class="settings-icon" onclick="alert('설정 기능은 준비 중입니다.')">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M12 1C6.48 1 2 5.48 2 11h2c0-3.87 3.13-7 7-7s7 3.13 7 7h2c0-5.52-4.48-10-10-10z" fill="currentColor" stroke="none"/>
+                <path d="M19.07 4.93L17.65 6.35C19.47 8.17 20.5 10.7 20.5 13.5H18.5C18.5 11.46 17.74 9.59 16.55 8.17L15.13 9.59C15.7 10.27 16.14 11.1 16.36 12H14.36C14.15 11.23 13.79 10.54 13.32 9.95L12.12 11.15C12.37 11.41 12.57 11.73 12.71 12H10.71C10.86 11.73 11.06 11.41 11.31 11.15L10.11 9.95C9.64 10.54 9.28 11.23 9.07 12H7.07C7.29 11.1 7.73 10.27 8.3 9.59L6.88 8.17C5.69 9.59 4.93 11.46 4.93 13.5H2.93C2.93 10.7 3.96 8.17 5.78 6.35L4.36 4.93C2.54 6.75 1.5 9.28 1.5 12C1.5 17.52 6.48 22 12 22S22.5 17.52 22.5 12C22.5 9.28 21.46 6.75 19.64 4.93L19.07 4.93Z"/>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+                <path d="M12 4C7.58 4 4 7.58 4 12s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8m0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6" fill="currentColor" stroke="none"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1 class="main-title">사장님 전용</h1>
+            <p class="subtitle">상하이버터떡맵 재고 관리 페이지</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card">
+            <div class="login-methods">
+                <!-- Google Button -->
+                <button class="social-button google-button" onclick="handleLogin('Google')">
+                    <div class="button-icon">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                    </div>
+                    Google로 시작하기
+                </button>
+
+                <!-- Kakao Button -->
+                <button class="social-button kakao-button" onclick="handleLogin('Kakao')">
+                    <div class="button-icon">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="currentColor" d="M12 2C6.48 2 2 5.58 2 10c0 2.85 1.51 5.35 3.85 6.85-.15 1.17-.84 3.6-.98 4.21-.2.88.44 1.42 1.27.87 1.26-.84 3.37-2.25 4.59-3.1 1.04.08 2.12.12 3.27.12 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                        </svg>
+                    </div>
+                    카카오로 시작하기
+                </button>
+
+                <!-- Naver Button -->
+                <button class="social-button naver-button" onclick="handleLogin('Naver')">
+                    <div class="button-icon">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="24" height="24" fill="none"/>
+                            <path fill="white" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-8h3.5L10 9l4.5 0v8h-4.5z"/>
+                            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-weight="bold" font-size="14" fill="white">N</text>
+                        </svg>
+                    </div>
+                    네이버로 시작하기
+                </button>
+            </div>
+        </div>
+
+        <!-- Guest Button -->
+        <button class="guest-button" onclick="window.location.href='dashboard.html'">
+            ✏️ 체험하기 (Guest)
+        </button>
+
+        <!-- Links Section -->
+        <div class="links-section">
+            <a href="#" class="link-item faq-link" onclick="alert('FAQ 페이지는 준비 중입니다.'); return false;">자주 묻는 질문 (FAQ)</a>
+            <a href="https://open.kakao.com/o/YOUR_KAKAO_LINK" class="link-item support-link" target="_blank">로그인 문제가 있으신가요? 카카오톡 1:1 문의하기</a>
+        </div>
+
+        <!-- Footer Message -->
+        <div class="footer-message">
+            상하이버터떡맵이 도움이 되셨나요?
+            <br>
+            <span class="heart">♡</span>
+            <a href="#" class="developer-support" onclick="alert('응원해주셔서 감사합니다!'); return false;">개발자 응원하기</a>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(platform) {
+            alert('준비 중입니다. 매장 등록은 buttertteokmaps@gmail.com 으로 문의해주세요.');
+        }
+
+        // Keyboard shortcut for settings
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 's' && event.ctrlKey) {
+                event.preventDefault();
+                document.querySelector('.settings-icon').click();
+            }
+        });
+    </script>
+</body>
+</html>

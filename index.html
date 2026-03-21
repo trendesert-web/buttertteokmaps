@@ -698,7 +698,7 @@ document.getElementById('btnFaq').addEventListener('click', () => {
   document.getElementById('faqModal').classList.add('active');
 });
 document.getElementById('btnOwner').addEventListener('click', () => {
-  document.getElementById('ownerModal').classList.add('active');
+  window.location.href = 'owner.html';
 });
 document.getElementById('btnMyLocation').addEventListener('click', () => {
   if (navigator.geolocation) {

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상하이버터떡맵 - 재고 관리</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FFF8E7;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            background-color: #E8A838;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header a {
+            background: none;
+            border: none;
+            color: #FFF8E7;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+
+        header a:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            color: #FFF8E7;
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            flex: 1;
+        }
+
+        .logout-btn {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 6px;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Store Info Card */
+        .store-info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #E8A838;
+        }
+
+        .store-name {
+            font-size: 22px;
+            font-weight: 700;
+            color: #8B6914;
+            margin-bottom: 8px;
+        }
+
+        .store-address {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.available {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .status-badge.low {
+            background-color: #FFF3E0;
+            color: #E65100;
+        }
+
+        .status-badge.soldout {
+            background-color: #FFEBEE;
+            color: #C62828;
+        }
+
+        /* Quick Stock Update Section */
+        .stock-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #8B6914;
+            margin-bottom: 20px;
+        }
+
+        .stock-input-wrapper {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stock-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .stock-input {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+            border: 3px solid #E8A838;
+            border-radius: 12px;
+            color: #8B6914;
+            font-family: 'Noto Sans KR', sans-serif;
+            -moz-appearance: textfield;
+        }
+
+        .stock-input::-webkit-outer-spin-button,
+        .stock-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .stock-input:focus {
+            outline: none;
+            border-color: #8B6914;
+            box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2);
+        }
+
+        /* Status Buttons */
+        .status-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .status-btn {
+            padding: 14px 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .status-btn:active {
+            transform: scale(0.95);
+        }
+
+        .status-btn.available {
+            border-color: #4CAF50;
+            color: #2E7D32;
+        }
+
+        .status-btn.available.active {
+            background-color: #E8F5E9;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+
+        .status-btn.low {
+            border-color: #FF9800;
+            color: #E65100;
+        }
+
+        .status-btn.low.active {
+            background-color: #FFF3E0;
+            border-color: #FF9800;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+        }
+
+        .status-btn.soldout {
+            border-color: #F44336;
+            color: #C62828;
+        }
+
+        .status-btn.soldout.active {
+            background-color: #FFEBEE;
+            border-color: #F44336;
+            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+        }
+
+        /* Update Button */
+        .update-btn {
+            width: 100%;
+            padding: 16px;
+            background-color: #E8A838;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Noto Sans KR', sans-serif;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(232, 168, 56, 0.3);
+        }
+
+        .update-btn:hover {
+            background-color: #D49028;
+            box-shadow: 0 4px 12px rgba(232, 168, 56, 0.4);
+        }
+
+        .update-btn:active {
+            transform: translateY(2px);
+        }
+
+        .last-updated {
+            font-size: 12px;
+            color: #999;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* Menu Management Section */
+        .menu-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .menu-list {
+            list-style: none;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #EEE;
+            font-size: 14px;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background-color: #ccc;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+
+        .toggle-switch.active {
+            background-color: #4CAF50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            left: 24px;
+        }
+
+        /* Stats Card */
+        .stats-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border-top: 4px solid #8B6914;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #EEE;
+            font-size: 14px;
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #E8A838;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Notice Section */
+        .notice-section {
+            background: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 12px;
+            color: #E65100;
+            line-height: 1.8;
+        }
+
+        .notice-section strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .contact-info {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background-color: #4CAF50;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(120px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.show {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .toast.hide {
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(-50%) translateY(120px);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            header {
+                padding: 12px;
+            }
+
+            header h1 {
+                font-size: 18px;
+            }
+
+            header a {
+                font-size: 14px;
+                padding: 6px 10px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .stock-input {
+                font-size: 36px;
+                padding: 16px;
+            }
+
+            .status-buttons {
+                gap: 8px;
+            }
+
+            .status-btn {
+                font-size: 12px;
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="index.html">← 돌아가기</a>
+        <h1>🧈 재고 관리</h1>
+        <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </header>
+
+    <div class="container">
+        <!-- Store Info Card -->
+        <div class="store-info-card">
+            <div class="store-name">체험 매장</div>
+            <div class="store-address">서울 강남구 테헤란로 123</div>
+            <span class="status-badge available" id="statusBadgeDisplay">🟢 판매중</span>
+        </div>
+
+        <!-- Quick Stock Update Section -->
+        <div class="stock-section">
+            <h2 class="section-title">재고 수량</h2>
+
+            <div class="stock-input-wrapper">
+                <label class="stock-label">현재 재고</label>
+                <input type="number" id="stockInput" class="stock-input" value="45" min="0" inputmode="numeric">
+            </div>
+
+            <h2 class="section-title" style="font-size: 14px; margin-top: 24px; margin-bottom: 12px;">상태 선택</h2>
+            <div class="status-buttons">
+                <button class="status-btn available active" onclick="selectStatus('available')">🟢 판매중</button>
+                <button class="status-btn low" onclick="selectStatus('low')">🟡 품절임박</button>
+                <button class="status-btn soldout" onclick="selectStatus('soldout')">🔴 품절</button>
+            </div>
+
+            <button class="update-btn" onclick="updateStock()">재고 업데이트</button>
+            <div class="last-updated" id="lastUpdated"></div>
+        </div>
+
+        <!-- Menu Management Section -->
+        <div class="menu-section">
+            <h2 class="section-title">메뉴 관리</h2>
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <span class="menu-name">오리지널 버터떡</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">딸기크림치즈</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">솔티캬라멜</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">흑임자</span>
+                    <button class="toggle-switch" onclick="toggleMenu(this)"></button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Today's Stats Card -->
+        <div class="stats-card">
+            <h2 class="section-title" style="margin-bottom: 16px;">통계</h2>
+            <div class="stat-row">
+                <span class="stat-label">오늘 조회수</span>
+                <span class="stat-value">128회</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">이번 주 조회수</span>
+                <span class="stat-value">892회</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">등록일</span>
+                <span class="stat-value">2026-03-21</span>
+            </div>
+        </div>
+
+        <!-- Notice Section -->
+        <div class="notice-section">
+            <strong>※ 중요 안내</strong>
+            <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
+            <div class="contact-info">문의: buttertteokmaps@gmail.com</div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let currentStatus = 'available';
+
+        // Initialize from localStorage
+        function initializeDashboard() {
+            const savedStock = localStorage.getItem('buttertteokmapStock');
+            const savedStatus = localStorage.getItem('buttertteokmapStatus');
+            const savedLastUpdated = localStorage.getItem('buttertteokmapLastUpdated');
+
+            if (savedStock) {
+                document.getElementById('stockInput').value = savedStock;
+            }
+
+            if (savedStatus) {
+                currentStatus = savedStatus;
+                selectStatus(savedStatus);
+            }
+
+            if (savedLastUpdated) {
+                updateLastUpdatedDisplay(savedLastUpdated);
+            }
+        }
+
+        function selectStatus(status) {
+            currentStatus = status;
+
+            // Update button states
+            document.querySelectorAll('.status-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.status-btn.${status}`).classList.add('active');
+
+            // Update badge
+            const badges = {
+                'available': { emoji: '🟢', text: '판매중', class: 'available' },
+                'low': { emoji: '🟡', text: '품절임박', class: 'low' },
+                'soldout': { emoji: '🔴', text: '품절', class: 'soldout' }
+            };
+
+            const badge = badges[status];
+            const badgeEl = document.getElementById('statusBadgeDisplay');
+            badgeEl.className = `status-badge ${badge.class}`;
+            badgeEl.textContent = `${badge.emoji} ${badge.text}`;
+        }
+
+        function updateStock() {
+            const stock = document.getElementById('stockInput').value;
+
+            if (stock === '' || stock < 0) {
+                showToast('재고를 올바르게 입력해주세요.');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('buttertteokmapStock', stock);
+            localStorage.setItem('buttertteokmapStatus', currentStatus);
+
+            const now = new Date();
+            const timeString = now.toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            localStorage.setItem('buttertteokmapLastUpdated', timeString);
+            updateLastUpdatedDisplay(timeString);
+
+            showToast('✓ 재고가 업데이트되었습니다!');
+        }
+
+        function updateLastUpdatedDisplay(timeString) {
+            document.getElementById('lastUpdated').textContent = `마지막 업데이트: ${timeString}`;
+        }
+
+        function toggleMenu(button) {
+            button.classList.toggle('active');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            toast.classList.remove('hide');
+
+            setTimeout(() => {
+                toast.classList.add('hide');
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        function logout() {
+            if (confirm('로그아웃하시겠습니까?')) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Handle Enter key on stock input
+        document.getElementById('stockInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                updateStock();
+            }
+        });
+
+        // Initialize dashboard on page load
+        window.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
