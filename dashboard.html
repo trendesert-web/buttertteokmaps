@@ -3,9 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상하이버터떡맵 - 재고 관리</title>
+    <title>FunS Wallet - 재고 관리</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --color-primary: #D4A574;
+            --color-secondary: #8B5E3C;
+            --color-accent: #F4845F;
+            --color-bg: #FEFAF6;
+            --color-card: #FFFFFF;
+            --color-text-primary: #2D2016;
+            --color-text-secondary: #7A6B5D;
+            --color-success: #6BAF7B;
+            --color-warning: #E8B84B;
+            --color-danger: #E85D5D;
+            --border-radius-card: 16px;
+            --border-radius-button: 12px;
+            --border-radius-pill: 24px;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,74 +30,94 @@
         }
 
         body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #FFF8E7;
-            color: #333;
+            font-family: 'Pretendard Variable', 'Noto Sans KR', sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text-primary);
             line-height: 1.6;
         }
 
         /* Header */
         header {
-            background-color: #E8A838;
-            padding: 16px;
+            background-color: var(--color-bg);
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid #E8E0D8;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
-        header a {
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
             background: none;
             border: none;
-            color: #FFF8E7;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: 500;
-            text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: background-color 0.3s ease;
-        }
-
-        header a:hover {
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            color: #FFF8E7;
+            color: var(--color-text-primary);
             font-size: 20px;
-            font-weight: 700;
-            text-align: center;
-            flex: 1;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-btn:hover {
+            background-color: rgba(212, 165, 116, 0.1);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .header-title-icon {
+            font-size: 20px;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .user-profile {
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #FFF8E7;
-            font-size: 14px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background-color: rgba(212, 165, 116, 0.1);
         }
 
         .profile-photo {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
             color: white;
+            font-size: 14px;
+            flex-shrink: 0;
         }
 
         .profile-photo img {
@@ -90,62 +127,114 @@
             object-fit: cover;
         }
 
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            line-height: 1.2;
+        }
+
         .provider-badge {
             display: inline-block;
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(212, 165, 116, 0.15);
+            color: var(--color-secondary);
             padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
+            border-radius: 4px;
+            font-size: 10px;
             font-weight: 600;
-            margin-left: 4px;
+            margin-top: 2px;
         }
 
-        .guest-badge {
-            display: inline-block;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+        .provider-badge.google { background-color: rgba(52, 168, 224, 0.15); color: #34A8E0; }
+        .provider-badge.kakao { background-color: rgba(255, 225, 0, 0.15); color: #FFE100; }
+        .provider-badge.naver { background-color: rgba(0, 192, 48, 0.15); color: #00C030; }
 
         .logout-btn {
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            color: #FFF8E7;
+            background-color: rgba(232, 93, 93, 0.1);
+            color: var(--color-danger);
+            border: 1px solid rgba(232, 93, 93, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 500;
-            transition: background-color 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .logout-btn:hover {
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: rgba(232, 93, 93, 0.2);
+            border-color: rgba(232, 93, 93, 0.3);
         }
 
         /* Main Container */
         .container {
-            max-width: 600px;
+            max-width: 480px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 20px 16px;
         }
 
-        /* Loading Spinner */
+        /* Guest Mode Banner */
+        .guest-banner {
+            background-color: #FFF9E6;
+            border: 1px solid rgba(232, 184, 75, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .guest-banner-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .guest-banner-content {
+            flex: 1;
+            font-size: 13px;
+            color: var(--color-text-primary);
+            line-height: 1.5;
+        }
+
+        .guest-banner-close {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.2s ease;
+        }
+
+        .guest-banner-close:hover {
+            opacity: 1;
+        }
+
+        /* Auth Loading */
         .auth-loading {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #FFF8E7;
+            background-color: var(--color-bg);
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(232, 168, 56, 0.2);
-            border-top-color: #E8A838;
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(212, 165, 116, 0.2);
+            border-top-color: var(--color-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -154,213 +243,244 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Card Styling */
+        .card {
+            background-color: var(--color-card);
+            border-radius: var(--border-radius-card);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(45, 32, 22, 0.08);
+            border: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
         /* Store Info Card */
         .store-info-card {
-            background: white;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .store-icon {
+            font-size: 40px;
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(244, 132, 95, 0.1));
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border-left: 4px solid #E8A838;
+        }
+
+        .store-info-content {
+            flex: 1;
         }
 
         .store-name {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 700;
-            color: #8B6914;
-            margin-bottom: 8px;
+            color: var(--color-text-primary);
+            margin-bottom: 4px;
         }
 
         .store-address {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 12px;
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
         }
 
-        .status-badge {
-            display: inline-block;
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             padding: 6px 12px;
-            border-radius: 20px;
+            border-radius: var(--border-radius-pill);
             font-size: 12px;
             font-weight: 600;
+            background-color: rgba(107, 175, 123, 0.1);
+            color: var(--color-success);
+            border: 1px solid rgba(107, 175, 123, 0.2);
         }
 
-        .status-badge.available {
-            background-color: #E8F5E9;
-            color: #2E7D32;
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--color-success);
         }
 
-        .status-badge.low {
-            background-color: #FFF3E0;
-            color: #E65100;
+        .status-indicator.low {
+            background-color: rgba(232, 184, 75, 0.1);
+            color: var(--color-warning);
+            border-color: rgba(232, 184, 75, 0.2);
         }
 
-        .status-badge.soldout {
-            background-color: #FFEBEE;
-            color: #C62828;
+        .status-indicator.low .status-dot {
+            background-color: var(--color-warning);
         }
 
-        /* Guest Mode Alert */
-        .guest-mode-alert {
-            background-color: #FFF3E0;
-            border-left: 4px solid #FF9800;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 24px;
-            font-size: 13px;
-            color: #E65100;
-            font-weight: 500;
+        .status-indicator.soldout {
+            background-color: rgba(232, 85, 93, 0.1);
+            color: var(--color-danger);
+            border-color: rgba(232, 85, 93, 0.2);
         }
 
-        /* Quick Stock Update Section */
-        .stock-section {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        .status-indicator.soldout .status-dot {
+            background-color: var(--color-danger);
         }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #8B6914;
-            margin-bottom: 20px;
-        }
-
-        .stock-input-wrapper {
-            margin-bottom: 20px;
+        /* Stock Control Card */
+        .stock-card {
             text-align: center;
         }
 
         .stock-label {
-            font-size: 14px;
-            color: #666;
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            font-weight: 500;
             margin-bottom: 12px;
             display: block;
         }
 
-        .stock-input {
-            font-size: 48px;
-            font-weight: 700;
-            text-align: center;
-            width: 100%;
-            padding: 20px;
-            border: 3px solid #E8A838;
-            border-radius: 12px;
-            color: #8B6914;
-            font-family: 'Noto Sans KR', sans-serif;
-            -moz-appearance: textfield;
+        .stock-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .stock-input::-webkit-outer-spin-button,
-        .stock-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        .stock-input:focus {
-            outline: none;
-            border-color: #8B6914;
-            box-shadow: 0 0 0 4px rgba(232, 168, 56, 0.2);
-        }
-
-        /* Status Buttons */
-        .status-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .status-btn {
-            padding: 14px 16px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            background: white;
+        .stock-stepper {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(212, 165, 116, 0.2);
+            background-color: white;
+            color: var(--color-primary);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 24px;
             font-weight: 600;
-            font-family: 'Noto Sans KR', sans-serif;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .status-btn:active {
+        .stock-stepper:hover {
+            background-color: rgba(212, 165, 116, 0.05);
+            border-color: rgba(212, 165, 116, 0.4);
+        }
+
+        .stock-stepper:active {
             transform: scale(0.95);
         }
 
-        .status-btn.available {
-            border-color: #4CAF50;
-            color: #2E7D32;
+        .stock-number {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--color-primary);
+            min-width: 120px;
+            line-height: 1;
         }
 
-        .status-btn.available.active {
-            background-color: #E8F5E9;
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        .status-pills {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .status-btn.low {
-            border-color: #FF9800;
-            color: #E65100;
+        .status-pill {
+            padding: 8px 16px;
+            border-radius: var(--border-radius-pill);
+            border: 2px solid;
+            background-color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .status-btn.low.active {
-            background-color: #FFF3E0;
-            border-color: #FF9800;
-            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+        .status-pill.available {
+            border-color: var(--color-success);
+            color: var(--color-success);
         }
 
-        .status-btn.soldout {
-            border-color: #F44336;
-            color: #C62828;
+        .status-pill.available.active {
+            background-color: var(--color-success);
+            color: white;
         }
 
-        .status-btn.soldout.active {
-            background-color: #FFEBEE;
-            border-color: #F44336;
-            box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.2);
+        .status-pill.low {
+            border-color: var(--color-warning);
+            color: var(--color-warning);
         }
 
-        /* Update Button */
+        .status-pill.low.active {
+            background-color: var(--color-warning);
+            color: white;
+        }
+
+        .status-pill.soldout {
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        .status-pill.soldout.active {
+            background-color: var(--color-danger);
+            color: white;
+        }
+
         .update-btn {
             width: 100%;
             padding: 16px;
-            background-color: #E8A838;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
+            border-radius: var(--border-radius-button);
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
-            font-family: 'Noto Sans KR', sans-serif;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(232, 168, 56, 0.3);
+            box-shadow: 0 4px 12px rgba(212, 165, 116, 0.25);
+            margin-bottom: 8px;
         }
 
         .update-btn:hover {
-            background-color: #D49028;
-            box-shadow: 0 4px 12px rgba(232, 168, 56, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(212, 165, 116, 0.35);
         }
 
         .update-btn:active {
-            transform: translateY(2px);
+            transform: translateY(0);
         }
 
         .last-updated {
-            font-size: 12px;
-            color: #999;
-            margin-top: 12px;
+            font-size: 11px;
+            color: var(--color-text-secondary);
             text-align: center;
         }
 
-        /* Menu Management Section */
+        /* Menu Management Card */
         .menu-section {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 0;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin-bottom: 16px;
+            padding: 0 20px;
+            padding-top: 20px;
+        }
+
+        .section-title:first-child {
+            padding-top: 0;
         }
 
         .menu-list {
@@ -371,8 +491,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #EEE;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.1);
             font-size: 14px;
         }
 
@@ -382,117 +502,146 @@
 
         .menu-name {
             font-weight: 500;
-            color: #333;
+            color: var(--color-text-primary);
         }
 
         /* Toggle Switch */
         .toggle-switch {
             position: relative;
-            width: 50px;
-            height: 28px;
-            background-color: #ccc;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+            width: 44px;
+            height: 24px;
+            background-color: rgba(212, 165, 116, 0.2);
+            border-radius: 12px;
             border: none;
             padding: 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
         .toggle-switch.active {
-            background-color: #4CAF50;
+            background-color: var(--color-success);
         }
 
         .toggle-switch::after {
             content: '';
             position: absolute;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             background-color: white;
             border-radius: 50%;
             top: 2px;
             left: 2px;
             transition: left 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .toggle-switch.active::after {
-            left: 24px;
+            left: 22px;
         }
 
-        /* Stats Card */
-        .stats-card {
-            background: white;
-            border-radius: 12px;
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             padding: 20px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            border-top: 4px solid #8B6914;
         }
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #EEE;
-            font-size: 14px;
-        }
-
-        .stat-row:last-child {
-            border-bottom: none;
-        }
-
-        .stat-label {
-            color: #666;
-            font-weight: 500;
-        }
-
-        .stat-value {
-            color: #E8A838;
-            font-weight: 700;
-            font-size: 16px;
-        }
-
-        /* Notice Section */
-        .notice-section {
-            background: #FFF3E0;
-            border-left: 4px solid #FF9800;
-            border-radius: 8px;
+        .stat-box {
+            text-align: center;
             padding: 16px;
-            margin-bottom: 24px;
-            font-size: 12px;
-            color: #E65100;
-            line-height: 1.8;
+            background-color: rgba(212, 165, 116, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(212, 165, 116, 0.1);
         }
 
-        .notice-section strong {
-            display: block;
+        .stat-icon {
+            font-size: 24px;
             margin-bottom: 8px;
         }
 
-        .contact-info {
-            margin-top: 12px;
-            font-size: 13px;
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--color-text-secondary);
             font-weight: 500;
+        }
+
+        /* Notice Card */
+        .notice-card {
+            background-color: #FFF5F0;
+            border: 1px solid rgba(244, 132, 95, 0.2);
+            padding: 16px 20px;
+        }
+
+        .notice-content {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .notice-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .notice-text {
+            flex: 1;
+            font-size: 12px;
+            color: var(--color-text-primary);
+            line-height: 1.6;
+        }
+
+        .notice-text strong {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .contact-info {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(244, 132, 95, 0.2);
         }
 
         /* Toast Notification */
         .toast {
             position: fixed;
-            bottom: 20px;
+            top: 80px;
             left: 50%;
-            transform: translateX(-50%) translateY(120px);
-            background-color: #4CAF50;
+            transform: translateX(-50%) translateY(-120px);
+            background: linear-gradient(135deg, var(--color-success), rgba(107, 175, 123, 0.8));
             color: white;
-            padding: 16px 24px;
-            border-radius: 8px;
+            padding: 14px 20px;
+            border-radius: 12px;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 13px;
+            box-shadow: 0 6px 20px rgba(107, 175, 123, 0.3);
             z-index: 1000;
-            animation: slideUp 0.4s ease-out;
+            animation: slideDownToast 0.4s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        @keyframes slideUp {
+        .toast::before {
+            content: '✓';
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        @keyframes slideDownToast {
             from {
-                transform: translateX(-50%) translateY(120px);
+                transform: translateX(-50%) translateY(-120px);
                 opacity: 0;
             }
             to {
@@ -501,21 +650,28 @@
             }
         }
 
-        .toast.show {
-            animation: slideUp 0.4s ease-out;
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .toast.hide {
-            animation: slideDown 0.4s ease-out;
+            animation: slideUpToast 0.4s ease-out;
         }
 
-        @keyframes slideDown {
+        @keyframes slideUpToast {
             from {
                 transform: translateX(-50%) translateY(0);
                 opacity: 1;
             }
             to {
-                transform: translateX(-50%) translateY(120px);
+                transform: translateX(-50%) translateY(-120px);
                 opacity: 0;
             }
         }
@@ -524,49 +680,41 @@
         @media (max-width: 480px) {
             header {
                 padding: 12px;
-                flex-wrap: wrap;
             }
 
-            header h1 {
-                font-size: 18px;
+            .header-title {
+                font-size: 15px;
             }
 
-            header a {
-                font-size: 14px;
-                padding: 6px 10px;
+            .user-name {
+                font-size: 12px;
             }
 
-            .header-right {
-                width: 100%;
-                margin-top: 12px;
-                justify-content: space-between;
+            .logout-btn {
+                font-size: 11px;
+                padding: 5px 10px;
             }
 
             .container {
                 padding: 16px;
             }
 
-            .stock-input {
-                font-size: 36px;
-                padding: 16px;
+            .stock-number {
+                font-size: 56px;
             }
 
-            .status-buttons {
-                gap: 8px;
+            .stock-stepper {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
             }
 
-            .status-btn {
-                font-size: 12px;
-                padding: 12px 8px;
+            .store-name {
+                font-size: 16px;
             }
 
-            .user-profile {
-                font-size: 12px;
-                gap: 6px;
-            }
-
-            .provider-badge {
-                font-size: 10px;
+            .section-title {
+                font-size: 13px;
             }
         }
     </style>
@@ -578,13 +726,18 @@
 
     <div id="mainContent" style="display: none;">
         <header>
-            <a href="index.html">← 돌아가기</a>
-            <h1>🧈 재고 관리</h1>
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='index.html'" title="돌아가기">←</button>
+                <div class="header-title">
+                    <span class="header-title-icon">🧈</span>
+                    <span>재고 관리</span>
+                </div>
+            </div>
             <div class="header-right">
                 <div class="user-profile" id="userProfile">
-                    <div class="profile-photo" id="profilePhoto">👤</div>
-                    <div id="userInfo">
-                        <span id="userName">사용자</span>
+                    <div class="profile-photo" id="profilePhoto">U</div>
+                    <div class="user-info">
+                        <div class="user-name" id="userName">사용자</div>
                         <span class="provider-badge" id="providerBadge" style="display: none;"></span>
                     </div>
                 </div>
@@ -593,41 +746,53 @@
         </header>
 
         <div class="container">
-            <!-- Guest Mode Alert -->
-            <div id="guestModeAlert" class="guest-mode-alert" style="display: none;">
-                <strong>체험 모드 (Guest)</strong><br>
-                현재 로그인 없이 체험 모드로 접근하고 있습니다. 일부 기능이 제한될 수 있습니다.
+            <!-- Guest Mode Banner -->
+            <div id="guestBanner" class="guest-banner" style="display: none;">
+                <div class="guest-banner-icon">ℹ️</div>
+                <div class="guest-banner-content">
+                    <strong style="display: block; margin-bottom: 2px;">체험 모드로 접속 중입니다</strong>
+                    <span>일부 기능이 제한될 수 있습니다</span>
+                </div>
+                <button class="guest-banner-close" onclick="this.parentElement.style.display='none';">×</button>
             </div>
 
             <!-- Store Info Card -->
-            <div class="store-info-card">
-                <div class="store-name">체험 매장</div>
-                <div class="store-address">서울 강남구 테헤란로 123</div>
-                <span class="status-badge available" id="statusBadgeDisplay">🟢 판매중</span>
+            <div class="card store-info-card">
+                <div class="store-icon">🏪</div>
+                <div class="store-info-content">
+                    <div class="store-name">FunS 체험점</div>
+                    <div class="store-address">서울 강남구 테헤란로 123</div>
+                    <div class="status-indicator available" id="statusIndicator">
+                        <span class="status-dot"></span>
+                        <span id="statusIndicatorText">판매중</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Quick Stock Update Section -->
-            <div class="stock-section">
-                <h2 class="section-title">재고 수량</h2>
+            <!-- Stock Control Card -->
+            <div class="card stock-card">
+                <label class="stock-label">현재 재고</label>
 
-                <div class="stock-input-wrapper">
-                    <label class="stock-label">현재 재고</label>
-                    <input type="number" id="stockInput" class="stock-input" value="45" min="0" inputmode="numeric">
+                <div class="stock-display">
+                    <button class="stock-stepper" onclick="decreaseStock()">−</button>
+                    <div class="stock-number" id="stockDisplay">45</div>
+                    <button class="stock-stepper" onclick="increaseStock()">+</button>
                 </div>
 
-                <h2 class="section-title" style="font-size: 14px; margin-top: 24px; margin-bottom: 12px;">상태 선택</h2>
-                <div class="status-buttons">
-                    <button class="status-btn available active" onclick="selectStatus('available')">🟢 판매중</button>
-                    <button class="status-btn low" onclick="selectStatus('low')">🟡 품절임박</button>
-                    <button class="status-btn soldout" onclick="selectStatus('soldout')">🔴 품절</button>
+                <input type="number" id="stockInput" value="45" min="0" style="display: none;">
+
+                <div class="status-pills">
+                    <button class="status-pill available active" onclick="selectStatus('available')">판매중</button>
+                    <button class="status-pill low" onclick="selectStatus('low')">품절임박</button>
+                    <button class="status-pill soldout" onclick="selectStatus('soldout')">품절</button>
                 </div>
 
-                <button class="update-btn" onclick="updateStock()">재고 업데이트</button>
+                <button class="update-btn" onclick="updateStock()">업데이트</button>
                 <div class="last-updated" id="lastUpdated"></div>
             </div>
 
-            <!-- Menu Management Section -->
-            <div class="menu-section">
+            <!-- Menu Management Card -->
+            <div class="card menu-section">
                 <h2 class="section-title">메뉴 관리</h2>
                 <ul class="menu-list">
                     <li class="menu-item">
@@ -649,32 +814,47 @@
                 </ul>
             </div>
 
-            <!-- Today's Stats Card -->
-            <div class="stats-card">
-                <h2 class="section-title" style="margin-bottom: 16px;">통계</h2>
-                <div class="stat-row">
-                    <span class="stat-label">오늘 조회수</span>
-                    <span class="stat-value">128회</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">이번 주 조회수</span>
-                    <span class="stat-value">892회</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">등록일</span>
-                    <span class="stat-value">2026-03-21</span>
+            <!-- Stats Card -->
+            <div class="card">
+                <h2 class="section-title">통계</h2>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-icon">👀</div>
+                        <div class="stat-value">128</div>
+                        <div class="stat-label">오늘 조회수</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value">892</div>
+                        <div class="stat-label">이번주 조회수</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-value" id="registrationDate">2026-03-21</div>
+                        <div class="stat-label">등록일</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value">4.8</div>
+                        <div class="stat-label">평점</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Notice Section -->
-            <div class="notice-section">
-                <strong>※ 중요 안내</strong>
-                <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
-                <div class="contact-info">문의: trendesert@gmail.com</div>
+            <!-- Notice Card -->
+            <div class="card notice-card">
+                <div class="notice-content">
+                    <div class="notice-icon">⚠️</div>
+                    <div class="notice-text">
+                        <strong>중요 안내</strong>
+                        <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
+                        <div class="contact-info">문의: trendesert@gmail.com</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="toast" id="toast"></div>
+        <div class="toast" id="toast" style="display: none;"></div>
     </div>
 
     <!-- Firebase SDK -->
@@ -698,8 +878,8 @@
 
         let currentStatus = 'available';
         let isGuestMode = false;
-        let currentAuthProvider = null; // Track current auth provider: 'google', 'kakao', 'naver', or null
-        let currentUser = null; // Store current user object
+        let currentAuthProvider = null;
+        let currentUser = null;
 
         // Check if user is in guest mode
         function checkGuestMode() {
@@ -740,19 +920,21 @@
 
                 // Show provider badge
                 if (provider) {
-                    providerBadgeEl.textContent = getProviderBadgeText(provider);
+                    const badgeText = getProviderBadgeText(provider);
+                    providerBadgeEl.textContent = badgeText;
+                    providerBadgeEl.className = `provider-badge ${provider}`;
                     providerBadgeEl.style.display = 'inline-block';
                 } else {
                     providerBadgeEl.style.display = 'none';
                 }
 
-                document.getElementById('guestModeAlert').style.display = 'none';
+                document.getElementById('guestBanner').style.display = 'none';
             } else if (isGuestMode) {
                 // Guest mode
                 userNameEl.textContent = '체험 모드';
                 profilePhotoEl.textContent = '👤';
                 providerBadgeEl.style.display = 'none';
-                document.getElementById('guestModeAlert').style.display = 'block';
+                document.getElementById('guestBanner').style.display = 'flex';
             }
         }
 
@@ -877,6 +1059,7 @@
 
             if (savedStock) {
                 document.getElementById('stockInput').value = savedStock;
+                document.getElementById('stockDisplay').textContent = savedStock;
             }
 
             if (savedStatus) {
@@ -892,23 +1075,42 @@
         function selectStatus(status) {
             currentStatus = status;
 
-            // Update button states
-            document.querySelectorAll('.status-btn').forEach(btn => {
-                btn.classList.remove('active');
+            // Update pill states
+            document.querySelectorAll('.status-pill').forEach(pill => {
+                pill.classList.remove('active');
             });
-            document.querySelector(`.status-btn.${status}`).classList.add('active');
+            document.querySelector(`.status-pill.${status}`).classList.add('active');
 
-            // Update badge
-            const badges = {
-                'available': { emoji: '🟢', text: '판매중', class: 'available' },
-                'low': { emoji: '🟡', text: '품절임박', class: 'low' },
-                'soldout': { emoji: '🔴', text: '품절', class: 'soldout' }
+            // Update indicator
+            const statusTexts = {
+                'available': '판매중',
+                'low': '품절임박',
+                'soldout': '품절'
             };
 
-            const badge = badges[status];
-            const badgeEl = document.getElementById('statusBadgeDisplay');
-            badgeEl.className = `status-badge ${badge.class}`;
-            badgeEl.textContent = `${badge.emoji} ${badge.text}`;
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator ${status}`;
+            document.getElementById('statusIndicatorText').textContent = statusTexts[status];
+        }
+
+        function increaseStock() {
+            const input = document.getElementById('stockInput');
+            const display = document.getElementById('stockDisplay');
+            let value = parseInt(input.value) || 0;
+            value++;
+            input.value = value;
+            display.textContent = value;
+        }
+
+        function decreaseStock() {
+            const input = document.getElementById('stockInput');
+            const display = document.getElementById('stockDisplay');
+            let value = parseInt(input.value) || 0;
+            if (value > 0) {
+                value--;
+            }
+            input.value = value;
+            display.textContent = value;
         }
 
         function updateStock() {
@@ -934,7 +1136,7 @@
             localStorage.setItem('buttertteokmapLastUpdated', timeString);
             updateLastUpdatedDisplay(timeString);
 
-            showToast('✓ 재고가 업데이트되었습니다!');
+            showToast('재고가 업데이트되었습니다!');
         }
 
         function updateLastUpdatedDisplay(timeString) {
@@ -948,12 +1150,14 @@
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.classList.add('show');
+            toast.style.display = 'flex';
             toast.classList.remove('hide');
 
             setTimeout(() => {
                 toast.classList.add('hide');
-                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 400);
             }, 2500);
         }
 
