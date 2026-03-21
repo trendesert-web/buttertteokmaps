@@ -260,6 +260,11 @@
             align-items: flex-start;
         }
 
+        .store-info-card:hover {
+            border-color: var(--color-primary);
+            box-shadow: 0 4px 20px rgba(212, 165, 116, 0.18);
+        }
+
         .store-icon {
             font-size: 40px;
             flex-shrink: 0;
@@ -1678,17 +1683,17 @@
             </div>
 
             <!-- Store Info Card -->
-            <div class="card store-info-card">
+            <div class="card store-info-card" onclick="showStoreSelector()" style="cursor: pointer; transition: all 0.2s;">
                 <div class="store-icon">🏪</div>
                 <div class="store-info-content">
-                    <div class="store-name" id="storeName">매장 선택 중...</div>
-                    <div class="store-address" id="storeAddress"></div>
+                    <div class="store-name" id="storeName">매장을 선택해주세요</div>
+                    <div class="store-address" id="storeAddress">탭하여 매장 검색 및 선택</div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                         <div class="status-indicator available" id="statusIndicator">
                             <span class="status-dot"></span>
                             <span id="statusIndicatorText">판매중</span>
                         </div>
-                        <button class="store-change-btn" onclick="showStoreSelector()">🔄 매장 변경</button>
+                        <button class="store-change-btn" onclick="event.stopPropagation(); showStoreSelector()">🔄 매장 변경</button>
                     </div>
                 </div>
             </div>
