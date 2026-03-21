@@ -1608,26 +1608,24 @@
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <div style="padding: 0 20px 20px;">
 
-                    <!-- 🔍 장소 검색 (핵심!) -->
+                    <!-- 🔍 장소 검색 영역 -->
                     <div style="background: #FFF8F0; border: 1.5px solid #D4A574; border-radius: 16px; padding: 16px; margin-bottom: 16px;">
-                        <h4 style="margin: 0 0 4px; font-size: 14px; color: #8B5E3C;">🔍 매장 검색</h4>
-                        <p style="margin: 0 0 12px; font-size: 11px; color: #999;">상호명이나 주소를 입력하면 자동으로 찾아드립니다</p>
-                        <div style="position: relative;">
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="regPlaceSearch" placeholder="예: 안다미로, 이웃집통통이, 강남 버터떡"
-                                       oninput="onRegSearchInput()"
-                                       onkeypress="if(event.key==='Enter'){event.preventDefault(); doRegSearch();}"
-                                       style="flex: 1; padding: 12px 14px; border: 1.5px solid #E8D5C4; border-radius: 12px; font-size: 13px; font-family: inherit; outline: none; background: white;">
-                                <button onclick="doRegSearch()" style="flex-shrink: 0; padding: 12px 16px; background: #03C75A; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;">검색</button>
-                            </div>
-                            <!-- 검색 결과 드롭다운 -->
-                            <div id="regSearchDropdown" style="display: none; position: relative; margin-top: 8px; max-height: 250px; overflow-y: auto; background: white; border: 1.5px solid #E8D5C4; border-radius: 12px; z-index: 10;"></div>
+                        <h4 style="margin: 0 0 8px; font-size: 14px; color: #8B5E3C;">🔍 매장 찾기</h4>
+
+                        <!-- 네이버 지도 검색 -->
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                            <input type="text" id="regPlaceSearch" placeholder="상호명 입력 (예: 안다미로, 버터떡)"
+                                   onkeypress="if(event.key==='Enter'){event.preventDefault(); openNaverMapSearch();}"
+                                   style="flex: 1; padding: 12px 14px; border: 1.5px solid #E8D5C4; border-radius: 12px; font-size: 13px; font-family: inherit; outline: none; background: white;">
+                            <button onclick="openNaverMapSearch()" style="flex-shrink: 0; padding: 12px 14px; background: #03C75A; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap;">🗺️ 네이버지도</button>
                         </div>
-                        <div style="text-align: center; margin-top: 10px;">
-                            <button onclick="openPostcodeSearch()" style="background: none; border: 1px solid #ccc; border-radius: 8px; padding: 8px 16px; color: #666; font-size: 12px; cursor: pointer; font-family: inherit;">
-                                📮 도로명 주소로 직접 검색
-                            </button>
-                        </div>
+                        <p style="margin: 0 0 12px; font-size: 11px; color: #999; text-align: center;">네이버 지도에서 매장을 확인한 후, 아래 버튼으로 주소를 입력하세요</p>
+
+                        <!-- 주소 검색 버튼 -->
+                        <button onclick="openPostcodeSearch()" style="width: 100%; padding: 13px; background: white; border: 1.5px solid #D4A574; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; color: #8B5E3C; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            📮 주소 검색 (도로명/지번)
+                        </button>
+                        <p style="margin: 4px 0 0; font-size: 11px; color: #aaa; text-align: center;">클릭하면 주소 검색창이 열립니다 → 선택하면 자동입력!</p>
                     </div>
 
                     <!-- 선택된 장소 정보 -->
@@ -2932,7 +2930,6 @@
 
             // Auto-fill form fields
             document.getElementById('regPlaceSearch').value = placeData.name;
-            document.getElementById('regSearchDropdown').style.display = 'none';
             document.getElementById('regStoreName').value = placeData.name;
             document.getElementById('regStoreAddr').value = placeData.addr || '';
             document.getElementById('regStoreAddr').removeAttribute('readonly');
@@ -3109,109 +3106,55 @@
 
         // 직접 입력 모드 (신규 매장 직접 등록)
         // ============================================
-        // 등록 폼 내 장소 검색 기능
+        // 등록 폼 - 네이버 지도 검색 + 다음 주소 검색
         // ============================================
-        let regSearchTimer = null;
 
-        function onRegSearchInput() {
-            clearTimeout(regSearchTimer);
+        // 네이버 지도에서 검색 (새 탭)
+        function openNaverMapSearch() {
             const q = document.getElementById('regPlaceSearch').value.trim();
-            if (q.length < 2) {
-                document.getElementById('regSearchDropdown').style.display = 'none';
+            if (!q) {
+                showToast('상호명을 입력해주세요.');
+                document.getElementById('regPlaceSearch').focus();
                 return;
             }
-            regSearchTimer = setTimeout(function() { doRegSearch(); }, 400);
+            const url = 'https://map.naver.com/p/search/' + encodeURIComponent(q);
+            window.open(url, '_blank');
+            showToast('네이버 지도에서 매장을 확인 후\n📮 주소 검색 버튼을 눌러주세요!');
         }
 
-        function doRegSearch() {
-            const q = document.getElementById('regPlaceSearch').value.trim();
-            if (q.length < 2) { return; }
-
-            const dropdown = document.getElementById('regSearchDropdown');
-            dropdown.style.display = 'block';
-            dropdown.innerHTML = '<div style="padding: 14px; text-align: center; color: #999; font-size: 13px;">🔍 검색 중...</div>';
-
-            // 카카오 SDK로 검색 시도
-            searchPlaces(q, function(results) {
-                if (results.length > 0) {
-                    window._regSearchResults = results;
-                    dropdown.innerHTML = results.slice(0, 6).map(function(r, idx) {
-                        return '<div onclick="selectRegResult(' + idx + ')" style="padding: 12px 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background=\'#FFF8F0\'" onmouseout="this.style.background=\'white\'">' +
-                            '<div style="font-weight: 600; font-size: 13px; color: #333;">' + r.name + '</div>' +
-                            '<div style="font-size: 11px; color: #888; margin-top: 2px;">' + r.addr + '</div>' +
-                            (r.phone ? '<div style="font-size: 11px; color: #aaa; margin-top: 1px;">📞 ' + r.phone + '</div>' : '') +
-                        '</div>';
-                    }).join('');
-                } else {
-                    dropdown.innerHTML = '<div style="padding: 14px; text-align: center; color: #999; font-size: 12px;">검색 결과가 없습니다.<br>아래 📮 도로명 주소 검색을 이용해보세요.</div>';
-                }
-            });
-        }
-
-        function selectRegResult(idx) {
-            const r = window._regSearchResults[idx];
-            if (!r) return;
-
-            selectedNaverPlace = {
-                kakaoId: r.kakaoId,
-                name: r.name,
-                addr: r.addr,
-                lat: r.lat,
-                lng: r.lng,
-                phone: r.phone,
-                placeUrl: r.placeUrl
-            };
-
-            // 선택 정보 표시
-            document.getElementById('selectedPlaceInfo').style.display = 'block';
-            document.getElementById('selectedPlaceName').textContent = r.name;
-            document.getElementById('selectedPlaceAddr').textContent = r.addr;
-
-            // 폼 자동입력
-            document.getElementById('regStoreName').value = r.name;
-            document.getElementById('regStoreAddr').value = r.addr;
-            document.getElementById('regStorePhone').value = r.phone || '';
-
-            const regionMatch = (r.addr || '').match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
-            document.getElementById('regStoreRegion').value = regionMatch ? regionMatch[1] : '';
-
-            const cat = r.category || '';
-            if (cat.includes('카페')) document.getElementById('regStoreType').value = '카페';
-            else if (cat.includes('베이커리') || cat.includes('빵')) document.getElementById('regStoreType').value = '베이커리';
-            else if (cat.includes('디저트')) document.getElementById('regStoreType').value = '디저트 카페';
-            else document.getElementById('regStoreType').value = '';
-
-            // 드롭다운 닫기
-            document.getElementById('regSearchDropdown').style.display = 'none';
-            document.getElementById('regPlaceSearch').value = r.name;
-
-            // readonly 해제
-            document.getElementById('regStoreAddr').removeAttribute('readonly');
-            document.getElementById('regStoreAddr').style.background = 'white';
-            document.getElementById('regStoreRegion').removeAttribute('readonly');
-            document.getElementById('regStoreRegion').style.background = 'white';
-
-            showToast(r.name + ' 선택됨! 정보를 확인해주세요.');
-        }
-
-        // 다음 우편번호(주소) 검색 - API키 불필요, 100% 작동
+        // 다음 주소 검색 - API키 불필요, 100% 작동
         function openPostcodeSearch() {
             new daum.Postcode({
                 oncomplete: function(data) {
                     const addr = data.roadAddress || data.jibunAddress;
+                    const buildingName = data.buildingName || '';
+
+                    // 주소 자동입력
                     document.getElementById('regStoreAddr').value = addr;
                     document.getElementById('regStoreAddr').removeAttribute('readonly');
                     document.getElementById('regStoreAddr').style.background = 'white';
 
+                    // 지역 자동입력
                     const regionMatch = addr.match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
                     document.getElementById('regStoreRegion').value = regionMatch ? regionMatch[1] : '';
                     document.getElementById('regStoreRegion').removeAttribute('readonly');
                     document.getElementById('regStoreRegion').style.background = 'white';
 
+                    // 건물명이 있으면 매장 이름에 자동입력
+                    if (buildingName && !document.getElementById('regStoreName').value) {
+                        document.getElementById('regStoreName').value = buildingName;
+                    }
+
+                    // selectedNaverPlace 업데이트
                     if (!selectedNaverPlace) selectedNaverPlace = {};
                     selectedNaverPlace.addr = addr;
 
-                    showToast('주소가 입력되었습니다!');
+                    // 선택 정보 표시
+                    document.getElementById('selectedPlaceInfo').style.display = 'block';
+                    document.getElementById('selectedPlaceName').textContent = buildingName || '주소 입력 완료';
+                    document.getElementById('selectedPlaceAddr').textContent = addr;
+
+                    showToast('주소가 입력되었습니다! ✅');
                 }
             }).open();
         }
@@ -3226,7 +3169,6 @@
             document.getElementById('selectedPlaceInfo').style.display = 'none';
             document.getElementById('registerFormTitle').textContent = '📋 매장 정보를 입력해주세요';
             document.getElementById('regPlaceSearch').value = '';
-            document.getElementById('regSearchDropdown').style.display = 'none';
             document.getElementById('regStoreName').value = '';
             document.getElementById('regStoreAddr').value = '';
             document.getElementById('regStoreRegion').value = '';
