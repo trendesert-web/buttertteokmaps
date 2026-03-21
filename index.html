@@ -112,25 +112,35 @@
       pointer-events: none;
     }
 
-    .header-location-btn {
-      flex-shrink: 0;
-      width: 40px;
-      height: 40px;
+    /* === MAP LOCATION BUTTON === */
+    .map-my-location-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 16px;
+      z-index: 400;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      background: var(--color-primary);
-      border: none;
-      color: white;
-      font-size: 18px;
+      background: white;
+      border: 1.5px solid rgba(212, 165, 116, 0.2);
+      color: var(--color-primary);
+      font-size: 22px;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 4px 16px rgba(45, 32, 22, 0.12);
     }
 
-    .header-location-btn:active {
-      transform: scale(0.95);
+    .map-my-location-btn:hover {
+      background: var(--color-primary);
+      color: white;
+      border-color: var(--color-primary);
+    }
+
+    .map-my-location-btn:active {
+      transform: scale(0.92);
     }
 
     /* === SEARCH RESULTS DROPDOWN === */
@@ -1026,7 +1036,7 @@
     >
     <div class="search-results" id="searchResults"></div>
   </div>
-  <button class="header-location-btn" id="btnMyLocation" title="내 위치">📍</button>
+
 </div>
 
 <!-- Map -->
@@ -1081,12 +1091,11 @@
   </div>
 </div>
 
+<!-- My Location Button (on map) -->
+<button class="map-my-location-btn" id="btnMyLocation" title="내 위치">📍</button>
+
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
-  <button class="nav-tab active" id="navMap">
-    <span class="nav-tab-icon">🗺️</span>
-    <span>지도</span>
-  </button>
   <button class="nav-tab" id="navCoupon">
     <span class="nav-tab-icon">🎫</span>
     <span>쿠폰</span>
@@ -1401,9 +1410,6 @@
     });
 
     // Navigation tabs
-    document.getElementById("navMap").addEventListener("click", () => {
-      setActiveNav("navMap");
-    });
     document.getElementById("navCoupon").addEventListener("click", () => {
       setActiveNav("navCoupon");
       openCouponBox();
