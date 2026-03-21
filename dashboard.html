@@ -621,17 +621,17 @@
         /* Toast Notification */
         .toast {
             position: fixed;
-            top: 80px;
+            top: 40px;
             left: 50%;
             transform: translateX(-50%) translateY(-120px);
             background: linear-gradient(135deg, var(--color-success), rgba(107, 175, 123, 0.8));
             color: white;
-            padding: 14px 20px;
+            padding: 14px 24px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 14px;
             box-shadow: 0 6px 20px rgba(107, 175, 123, 0.3);
-            z-index: 1000;
+            z-index: 9999;
             animation: slideDownToast 0.4s ease-out;
             display: flex;
             align-items: center;
@@ -720,6 +720,15 @@
 
             .section-title {
                 font-size: 13px;
+            }
+
+            .coupon-form-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .store-select-modal {
+                max-width: 100%;
+                max-height: 90vh;
+                border-radius: 16px;
             }
         }
 
@@ -1028,14 +1037,15 @@
         }
 
         .coupon-action-sm {
-            padding: 6px 10px;
+            padding: 8px 12px;
             border-radius: 8px;
             border: none;
             font-family: inherit;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            min-height: 36px;
         }
 
         .coupon-action-sm.copy {
@@ -1157,7 +1167,9 @@
         }
 
         .store-search-input:focus {
-            border-color: var(--color-primary);
+            outline: none;
+            border-color: #D4A574;
+            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.15);
         }
 
         .store-search-input::placeholder {
@@ -1215,7 +1227,7 @@
         }
 
         .store-select-item-addr {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--color-text-secondary);
             white-space: nowrap;
             overflow: hidden;
@@ -1381,7 +1393,9 @@
         }
 
         .register-input:focus {
-            border-color: var(--color-primary);
+            outline: none;
+            border-color: #D4A574;
+            box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.15);
         }
 
         .register-input::placeholder {
@@ -1581,10 +1595,10 @@
 </head>
 <body>
     <!-- Store Selection Modal -->
-    <div class="store-select-overlay" id="storeSelectOverlay" style="display: none;">
+    <div class="store-select-overlay" id="storeSelectOverlay" style="display: none;" onclick="if(event.target===this) hideStoreSelector()">
         <div class="store-select-modal">
             <div class="store-select-header" style="position: relative;">
-                <button onclick="hideStoreSelector()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; color: var(--color-text-secondary); cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,165,116,0.1)'" onmouseout="this.style.background='none'">✕</button>
+                <button onclick="hideStoreSelector()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 22px; color: var(--color-text-secondary); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.2s;" onmouseover="this.style.background='rgba(212,165,116,0.1)'" onmouseout="this.style.background='none'">✕</button>
                 <h2>🏪 매장을 선택해주세요</h2>
                 <p>운영하시는 매장을 검색하거나 새로 등록하세요</p>
             </div>
@@ -1611,7 +1625,7 @@
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <!-- 뒤로가기 헤더 -->
                 <div style="padding: 16px 20px 12px; border-bottom: 1px solid rgba(212,165,116,0.15); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; background: var(--color-bg); z-index: 2;">
-                    <button onclick="hideManualRegister()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 8px; color: #8B5E3C;">← </button>
+                    <button onclick="hideManualRegister()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 8px 12px; border-radius: 8px; color: #8B5E3C;">← </button>
                     <h3 style="margin: 0; font-size: 16px; color: #8B5E3C; font-weight: 700;">📝 신규 매장 등록</h3>
                 </div>
                 <div style="padding: 16px 20px 20px;">
@@ -1734,6 +1748,13 @@
                 <div class="store-info-content">
                     <div class="store-name" id="storeName">매장을 선택해주세요</div>
                     <div class="store-address" id="storeAddress">탭하여 매장 검색 및 선택</div>
+                    <div id="storeDetailInfo" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid rgba(212,165,116,0.15);">
+                        <div style="display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:#999;">
+                            <span id="storeDetailType"></span>
+                            <span id="storeDetailMenu"></span>
+                            <span id="storeDetailPhone"></span>
+                        </div>
+                    </div>
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
                         <div class="status-indicator available" id="statusIndicator">
                             <span class="status-dot"></span>
@@ -1940,6 +1961,18 @@
         </div>
 
         <div class="toast" id="toast" style="display: none;"></div>
+
+        <div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(45,32,22,0.5); backdrop-filter:blur(4px); z-index:600; display:none; align-items:center; justify-content:center; padding:20px;">
+            <div style="background:#FEFAF6; border-radius:20px; padding:28px; width:100%; max-width:340px; box-shadow:0 20px 60px rgba(45,32,22,0.2); text-align:center;">
+                <h3 style="margin:0 0 8px; font-size:18px; color:#8B5E3C;">🔒 비밀번호 확인</h3>
+                <p style="margin:0 0 16px; font-size:13px; color:#999;">매장 관리 비밀번호를 입력해주세요</p>
+                <input type="password" id="passwordModalInput" placeholder="비밀번호 입력" style="width:100%; padding:14px 16px; border:1.5px solid #E8D5C4; border-radius:12px; font-size:15px; font-family:inherit; text-align:center; box-sizing:border-box; margin-bottom:16px;" onkeypress="if(event.key==='Enter') confirmPasswordModal()">
+                <div style="display:flex; gap:10px;">
+                    <button onclick="closePasswordModal()" style="flex:1; padding:12px; border:1.5px solid #E8D5C4; background:white; border-radius:12px; font-family:inherit; font-size:14px; cursor:pointer; color:#8B5E3C;">취소</button>
+                    <button onclick="confirmPasswordModal()" style="flex:1; padding:12px; border:none; background:linear-gradient(135deg,#D4A574,#8B5E3C); color:white; border-radius:12px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;">확인</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Kakao Maps SDK for Place Search -->
@@ -1972,6 +2005,12 @@
         let currentUser = null;
 
         let selectedStoreId = null;
+
+        // XSS prevention - HTML escape helper
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
 
         // 42 stores data (same as index.html)
         const allStores = [
@@ -2254,9 +2293,10 @@
         }
 
         function updateStock() {
-            const stock = document.getElementById('stockInput').value;
+            const stockVal = document.getElementById('stockInput').value.trim();
+            const stock = parseInt(stockVal);
 
-            if (stock === '' || stock < 0) {
+            if (stockVal === '' || isNaN(stock) || stock < 0) {
                 showToast('재고를 올바르게 입력해주세요.');
                 return;
             }
@@ -2512,7 +2552,7 @@
 
             // Validation
             if (!name) { showToast('쿠폰 이름을 입력해주세요.'); return; }
-            if (!value || value <= 0) { showToast('할인 값을 입력해주세요.'); return; }
+            if (!value || isNaN(value) || value <= 0) { showToast('할인 값을 입력해주세요.'); return; }
             if (couponType === 'percent' && value > 100) { showToast('할인율은 100% 이하로 설정해주세요.'); return; }
             if (!quantity || quantity <= 0) { showToast('발행 수량을 입력해주세요.'); return; }
             if (!code) { showToast('쿠폰 코드를 입력하거나 자동생성 해주세요.'); return; }
@@ -2666,6 +2706,10 @@
         }
 
         function hideStoreSelector() {
+            if (typeof searchDebounceTimer !== 'undefined' && searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = null;
+            }
             document.getElementById('storeSelectOverlay').style.display = 'none';
         }
 
@@ -2695,7 +2739,10 @@
         }
 
         // 장소 검색 통합 함수 (SDK 우선, fallback 없음)
-        function searchPlaces(query, callback) {
+        function searchPlaces(query, callback, retryCount) {
+            // Initialize retryCount if not provided
+            if (!retryCount) retryCount = 0;
+
             // SDK가 준비됐으면 SDK 사용
             if (kakaoSDKReady && kakaoPlaces) {
                 kakaoPlaces.keywordSearch(query, function(data, status) {
@@ -2721,11 +2768,18 @@
 
             // SDK 안됐으면 초기화 시도 후 재시도
             if (!kakaoSDKReady) {
+                // Check if we've exceeded max retries
+                if (retryCount >= 3) {
+                    console.error('❌ Kakao SDK not available after max retries');
+                    callback([]);
+                    return;
+                }
+
                 initKakaoPlaces();
                 // 1초 후 재시도
                 setTimeout(function() {
                     if (kakaoSDKReady && kakaoPlaces) {
-                        searchPlaces(query, callback);
+                        searchPlaces(query, callback, retryCount + 1);
                     } else {
                         console.error('❌ Kakao SDK not available for search');
                         callback([]);
@@ -2740,6 +2794,20 @@
         // 페이지 로드 시 SDK 초기화
         window.addEventListener('load', function() {
             setTimeout(initKakaoPlaces, 300);
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var pwModal = document.getElementById('passwordModal');
+                if (pwModal && pwModal.style.display === 'flex') {
+                    closePasswordModal();
+                    return;
+                }
+                var overlay = document.getElementById('storeSelectOverlay');
+                if (overlay && overlay.style.display !== 'none') {
+                    hideStoreSelector();
+                }
+            }
         });
 
         function filterStoreList() {
@@ -2788,8 +2856,8 @@
                     <div class="store-select-item" onclick="selectStore(${s.id})">
                         <div class="store-select-item-icon">🏪</div>
                         <div class="store-select-item-info">
-                            <div class="store-select-item-name">${s.name} <span class="store-select-item-badge registered">등록됨</span></div>
-                            <div class="store-select-item-addr">${s.addr}</div>
+                            <div class="store-select-item-name">${escapeHtml(s.name)} <span class="store-select-item-badge registered">등록됨</span></div>
+                            <div class="store-select-item-addr">${escapeHtml(s.addr)}</div>
                         </div>
                         <div class="store-select-item-arrow">›</div>
                     </div>
@@ -2812,9 +2880,9 @@
                         <div class="store-select-item" onclick="selectKakaoPlace(window._kakaoSearchResults[${idx}])">
                             <div class="store-select-item-icon">📍</div>
                             <div class="store-select-item-info">
-                                <div class="store-select-item-name">${k.name} <span class="store-select-item-badge kakao">지도</span></div>
-                                <div class="store-select-item-addr">${k.addr}</div>
-                                ${k.category ? '<div class="store-select-item-category">' + k.category + '</div>' : ''}
+                                <div class="store-select-item-name">${escapeHtml(k.name)} <span class="store-select-item-badge kakao">지도</span></div>
+                                <div class="store-select-item-addr">${escapeHtml(k.addr)}</div>
+                                ${k.category ? '<div class="store-select-item-category">' + escapeHtml(k.category) + '</div>' : ''}
                             </div>
                             <div class="store-select-item-arrow">+</div>
                         </div>
@@ -2839,25 +2907,53 @@
                 <div class="store-select-item" onclick="selectStore(${s.id})">
                     <div class="store-select-item-icon">🏪</div>
                     <div class="store-select-item-info">
-                        <div class="store-select-item-name">${s.name}</div>
-                        <div class="store-select-item-addr">${s.addr}</div>
+                        <div class="store-select-item-name">${escapeHtml(s.name)}</div>
+                        <div class="store-select-item-addr">${escapeHtml(s.addr)}</div>
                     </div>
                     <div class="store-select-item-arrow">›</div>
                 </div>
             `).join('');
         }
 
+        let _pendingStoreId = null;
+
         function selectStore(storeId) {
             const savedPass = localStorage.getItem('buttertteokmapStorePass_' + storeId);
             if (savedPass) {
-                // 비밀번호가 설정된 매장 → 확인 필요
-                const inputPass = prompt('매장 관리 비밀번호를 입력해주세요:');
-                if (!inputPass) return;
-                if (btoa(inputPass) !== savedPass) {
-                    showToast('비밀번호가 틀렸습니다.');
-                    return;
-                }
+                _pendingStoreId = storeId;
+                const modal = document.getElementById('passwordModal');
+                modal.style.display = 'flex';
+                const input = document.getElementById('passwordModalInput');
+                input.value = '';
+                setTimeout(function() { input.focus(); }, 100);
+                return;
             }
+            completeStoreSelection(storeId);
+        }
+
+        function confirmPasswordModal() {
+            const input = document.getElementById('passwordModalInput');
+            const pass = input.value;
+            if (!pass) { input.style.borderColor = '#F44336'; return; }
+            const savedPass = localStorage.getItem('buttertteokmapStorePass_' + _pendingStoreId);
+            if (btoa(pass) !== savedPass) {
+                showToast('비밀번호가 틀렸습니다.');
+                input.value = '';
+                input.style.borderColor = '#F44336';
+                input.focus();
+                return;
+            }
+            closePasswordModal();
+            completeStoreSelection(_pendingStoreId);
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+            document.getElementById('passwordModalInput').value = '';
+            _pendingStoreId = null;
+        }
+
+        function completeStoreSelection(storeId) {
             setSelectedStoreId(storeId);
             hideStoreSelector();
             applySelectedStore();
@@ -2957,6 +3053,19 @@
             if (!store) return;
             document.getElementById('storeName').textContent = store.name;
             document.getElementById('storeAddress').textContent = store.addr;
+
+            // 매장 상세 정보 표시
+            var detailDiv = document.getElementById('storeDetailInfo');
+            if (detailDiv) {
+                var hasDetail = false;
+                var typeEl = document.getElementById('storeDetailType');
+                var menuEl = document.getElementById('storeDetailMenu');
+                var phoneEl = document.getElementById('storeDetailPhone');
+                if (store.type) { typeEl.textContent = '🏷️ ' + store.type; hasDetail = true; } else { typeEl.textContent = ''; }
+                if (store.menu) { menuEl.textContent = '🍽️ ' + store.menu; hasDetail = true; } else { menuEl.textContent = ''; }
+                if (store.phone) { phoneEl.textContent = '📞 ' + store.phone; hasDetail = true; } else { phoneEl.textContent = ''; }
+                detailDiv.style.display = hasDetail ? 'block' : 'none';
+            }
             // Load store-specific data
             loadStoreData();
         }
@@ -3170,46 +3279,69 @@
 
         function showManualRegister() {
             // 검색창, 매장 리스트, 등록 버튼 숨기기
-            document.querySelector('.store-search-box').style.display = 'none';
-            document.getElementById('storeSelectList').style.display = 'none';
-            document.getElementById('manualRegisterBtn').style.display = 'none';
+            const searchBox = document.querySelector('.store-search-box');
+            if (searchBox) searchBox.style.display = 'none';
+            const storeSelectList = document.getElementById('storeSelectList');
+            if (storeSelectList) storeSelectList.style.display = 'none';
+            const manualRegisterBtn = document.getElementById('manualRegisterBtn');
+            if (manualRegisterBtn) manualRegisterBtn.style.display = 'none';
 
             // 헤더 텍스트 변경
-            document.querySelector('.store-select-header h2').textContent = '📝 신규 매장 등록';
-            document.querySelector('.store-select-header p').textContent = '새로운 매장 정보를 입력해주세요';
+            const headerH2 = document.querySelector('.store-select-header h2');
+            if (headerH2) headerH2.textContent = '📝 신규 매장 등록';
+            const headerP = document.querySelector('.store-select-header p');
+            if (headerP) headerP.textContent = '새로운 매장 정보를 입력해주세요';
 
             // 폼 초기화
             const section = document.getElementById('registerSection');
             selectedNaverPlace = { name: '', addr: '' };
-            document.getElementById('selectedPlaceInfo').style.display = 'none';
-            document.getElementById('registerFormTitle').textContent = '📋 매장 정보를 입력해주세요';
+            const selectedPlaceInfo = document.getElementById('selectedPlaceInfo');
+            if (selectedPlaceInfo) selectedPlaceInfo.style.display = 'none';
+            const registerFormTitle = document.getElementById('registerFormTitle');
+            if (registerFormTitle) registerFormTitle.textContent = '📋 매장 정보를 입력해주세요';
             ['regStoreName','regStoreAddr','regStoreRegion','regStoreType','regStoreMenu','regStorePrice','regStorePhone','regStorePassword','regStorePasswordConfirm'].forEach(function(id) {
-                document.getElementById(id).value = '';
+                const el = document.getElementById(id);
+                if (el) el.value = '';
             });
 
             // 주소 검색 영역 초기화
             const embedEl = document.getElementById('postcodeEmbed');
-            embedEl.style.display = 'block';
-            embedEl.parentElement.querySelector('h4').textContent = '🔍 주소 검색';
-            embedEl.parentElement.querySelector('p').textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
+            if (embedEl) {
+                embedEl.style.display = 'block';
+                const parentEl = embedEl.parentElement;
+                if (parentEl) {
+                    const h4 = parentEl.querySelector('h4');
+                    if (h4) h4.textContent = '🔍 주소 검색';
+                    const p = parentEl.querySelector('p');
+                    if (p) p.textContent = '상호명이나 도로명 주소를 검색하세요. 선택하면 자동입력됩니다.';
+                }
+            }
 
-            section.style.display = 'flex';
-            section.style.flexDirection = 'column';
+            if (section) {
+                section.style.display = 'flex';
+                section.style.flexDirection = 'column';
+            }
             setTimeout(embedPostcodeSearch, 200);
         }
 
         function hideManualRegister() {
             // 등록 폼 숨기기
-            document.getElementById('registerSection').style.display = 'none';
+            const registerSection = document.getElementById('registerSection');
+            if (registerSection) registerSection.style.display = 'none';
 
             // 검색창, 매장 리스트, 등록 버튼 다시 보이기
-            document.querySelector('.store-search-box').style.display = '';
-            document.getElementById('storeSelectList').style.display = '';
-            document.getElementById('manualRegisterBtn').style.display = '';
+            const searchBox = document.querySelector('.store-search-box');
+            if (searchBox) searchBox.style.display = '';
+            const storeSelectList = document.getElementById('storeSelectList');
+            if (storeSelectList) storeSelectList.style.display = '';
+            const manualRegisterBtn = document.getElementById('manualRegisterBtn');
+            if (manualRegisterBtn) manualRegisterBtn.style.display = '';
 
             // 헤더 원복
-            document.querySelector('.store-select-header h2').textContent = '🏪 매장을 선택해주세요';
-            document.querySelector('.store-select-header p').textContent = '운영하시는 매장을 검색하거나 새로 등록하세요';
+            const headerH2 = document.querySelector('.store-select-header h2');
+            if (headerH2) headerH2.textContent = '🏪 매장을 선택해주세요';
+            const headerP = document.querySelector('.store-select-header p');
+            if (headerP) headerP.textContent = '운영하시는 매장을 검색하거나 새로 등록하세요';
         }
 
         function registerNewStore() {
@@ -3295,14 +3427,15 @@
             selectedNaverPlace = null;
             document.getElementById('registerSection').style.display = 'none';
             document.getElementById('regStoreName').value = '';
+            document.getElementById('regStoreAddr').value = '';
             document.getElementById('regStoreRegion').value = '';
             document.getElementById('regStoreType').value = '';
             document.getElementById('regStoreMenu').value = '';
             document.getElementById('regStorePrice').value = '';
             document.getElementById('regStorePhone').value = '';
+            document.getElementById('regStorePassword').value = '';
+            document.getElementById('regStorePasswordConfirm').value = '';
             document.getElementById('storeSearchInput').value = '';
-
-            showToast('🎉 매장이 등록되었습니다!');
         }
 
         // Load custom stores on init
