@@ -1089,9 +1089,249 @@
             color: var(--color-text-secondary);
             margin-top: 2px;
         }
+
+        /* Store Selection Modal */
+        .store-select-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 32, 22, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .store-select-modal {
+            background: var(--color-bg);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(45, 32, 22, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .store-select-header {
+            padding: 24px 20px 16px;
+            text-align: center;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.15);
+        }
+
+        .store-select-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin-bottom: 6px;
+        }
+
+        .store-select-header p {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        .store-search-box {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
+        .store-search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid rgba(212, 165, 116, 0.25);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--color-text-primary);
+            background: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .store-search-input:focus {
+            border-color: var(--color-primary);
+        }
+
+        .store-search-input::placeholder {
+            color: var(--color-text-secondary);
+            opacity: 0.5;
+        }
+
+        .store-select-list {
+            overflow-y: auto;
+            flex: 1;
+            padding: 8px 12px;
+            max-height: 400px;
+        }
+
+        .store-select-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1.5px solid transparent;
+        }
+
+        .store-select-item:hover {
+            background: rgba(212, 165, 116, 0.06);
+            border-color: rgba(212, 165, 116, 0.15);
+        }
+
+        .store-select-item-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(244, 132, 95, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .store-select-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .store-select-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .store-select-item-addr {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 2px;
+        }
+
+        .store-select-item-arrow {
+            color: var(--color-text-secondary);
+            opacity: 0.4;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .store-select-footer {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(212, 165, 116, 0.15);
+            text-align: center;
+        }
+
+        .store-change-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            border-radius: 8px;
+            background: rgba(212, 165, 116, 0.05);
+            color: var(--color-text-secondary);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .store-change-btn:hover {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        /* Custom menu add */
+        .menu-add-row {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+        }
+
+        .menu-add-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1.5px solid rgba(212, 165, 116, 0.2);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--color-text-primary);
+            background: white;
+            outline: none;
+        }
+
+        .menu-add-input:focus {
+            border-color: var(--color-primary);
+        }
+
+        .menu-add-input::placeholder {
+            color: var(--color-text-secondary);
+            opacity: 0.5;
+        }
+
+        .menu-add-btn {
+            padding: 10px 16px;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .menu-add-btn:hover {
+            background: var(--color-secondary);
+        }
+
+        .menu-delete-btn {
+            background: none;
+            border: none;
+            color: var(--color-danger);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .menu-delete-btn:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
+    <!-- Store Selection Modal -->
+    <div class="store-select-overlay" id="storeSelectOverlay" style="display: none;">
+        <div class="store-select-modal">
+            <div class="store-select-header">
+                <h2>🏪 매장을 선택해주세요</h2>
+                <p>운영하시는 매장을 검색하고 선택하세요</p>
+            </div>
+            <div class="store-search-box">
+                <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 또는 지역으로 검색" oninput="filterStoreList()">
+            </div>
+            <div class="store-select-list" id="storeSelectList"></div>
+            <div class="store-select-footer">
+                <p style="font-size: 11px; color: var(--color-text-secondary);">매장이 목록에 없나요? <a href="mailto:trendesert@gmail.com" style="color: var(--color-accent);">등록 문의</a></p>
+            </div>
+        </div>
+    </div>
+
     <div id="authLoading" class="auth-loading" style="display: none;">
         <div class="spinner"></div>
     </div>
@@ -1132,11 +1372,14 @@
             <div class="card store-info-card">
                 <div class="store-icon">🏪</div>
                 <div class="store-info-content">
-                    <div class="store-name" id="storeName">버터떡맵 체험점</div>
-                    <div class="store-address" id="storeAddress">서울 강남구 테헤란로 123</div>
-                    <div class="status-indicator available" id="statusIndicator">
-                        <span class="status-dot"></span>
-                        <span id="statusIndicatorText">판매중</span>
+                    <div class="store-name" id="storeName">매장 선택 중...</div>
+                    <div class="store-address" id="storeAddress"></div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <div class="status-indicator available" id="statusIndicator">
+                            <span class="status-dot"></span>
+                            <span id="statusIndicatorText">판매중</span>
+                        </div>
+                        <button class="store-change-btn" onclick="showStoreSelector()">🔄 매장 변경</button>
                     </div>
                 </div>
             </div>
@@ -1166,7 +1409,7 @@
             <!-- Menu Management Card -->
             <div class="card menu-section">
                 <h2 class="section-title">메뉴 관리</h2>
-                <ul class="menu-list">
+                <ul class="menu-list" id="menuList">
                     <li class="menu-item">
                         <span class="menu-name">오리지널 버터떡</span>
                         <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
@@ -1184,6 +1427,10 @@
                         <button class="toggle-switch" onclick="toggleMenu(this)"></button>
                     </li>
                 </ul>
+                <div class="menu-add-row">
+                    <input type="text" class="menu-add-input" id="newMenuInput" placeholder="새 메뉴 이름 입력" maxlength="30" onkeypress="if(event.key==='Enter')addCustomMenu()">
+                    <button class="menu-add-btn" onclick="addCustomMenu()">+ 추가</button>
+                </div>
             </div>
 
             <!-- Store Image Upload Card -->
@@ -1226,15 +1473,10 @@
                         <div class="stat-value">892</div>
                         <div class="stat-label">이번주 조회수</div>
                     </div>
-                    <div class="stat-box">
+                    <div class="stat-box" style="grid-column: span 2;">
                         <div class="stat-icon">📅</div>
                         <div class="stat-value" id="registrationDate">2026-03-21</div>
                         <div class="stat-label">등록일</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-value">4.8</div>
-                        <div class="stat-label">평점</div>
                     </div>
                 </div>
             </div>
@@ -1364,6 +1606,54 @@
         let currentAuthProvider = null;
         let currentUser = null;
 
+        let selectedStoreId = null;
+
+        // 42 stores data (same as index.html)
+        const allStores = [
+            { id: 1, name: "이웃집통통이 압구정점", addr: "서울 강남구 선릉로161길 19", region: "서울", area: "압구정" },
+            { id: 2, name: "이웃집통통이 망원점", addr: "서울 마포구 월드컵로13길 79", region: "서울", area: "망원" },
+            { id: 3, name: "오우드 성수", addr: "서울 성동구 연무장길 101-1", region: "서울", area: "성수" },
+            { id: 4, name: "새들러하우스", addr: "서울 강남구 도산대로17길 10 B1", region: "서울", area: "신사" },
+            { id: 5, name: "카페 이오이", addr: "서울 마포구 독막로 252 1층", region: "서울", area: "대흥" },
+            { id: 6, name: "구십이도", addr: "서울 광진구 천호대로110길 40", region: "서울", area: "광진" },
+            { id: 7, name: "온기", addr: "서울 서초구 명달로70길 10", region: "서울", area: "서초" },
+            { id: 8, name: "늘해피", addr: "서울 강남구 학동로 342 B1F", region: "서울", area: "강남" },
+            { id: 9, name: "데이라이트 신도림", addr: "서울 구로구 경인로 662", region: "서울", area: "신도림" },
+            { id: 10, name: "데이라이트 구로", addr: "서울 구로구 디지털로 300", region: "서울", area: "구로" },
+            { id: 11, name: "하츠베이커리 성수", addr: "서울 성동구 성수이로 90", region: "서울", area: "성수" },
+            { id: 12, name: "르 샤흠 디저트", addr: "서울 용산구 이태원로 210", region: "서울", area: "이태원" },
+            { id: 13, name: "버터떡 팝업 롯데월드몰", addr: "서울 송파구 올림픽로 300 B1F", region: "서울", area: "잠실" },
+            { id: 14, name: "코코하우스 망원", addr: "서울 마포구 망원로 62", region: "서울", area: "망원" },
+            { id: 15, name: "홍대 버터떡공방", addr: "서울 마포구 홍익로 25", region: "서울", area: "홍대" },
+            { id: 16, name: "여의도 떡이야기", addr: "서울 영등포구 여의대로 108", region: "서울", area: "여의도" },
+            { id: 17, name: "건대입구 버터풍", addr: "서울 광진구 아차산로 200", region: "서울", area: "건대" },
+            { id: 18, name: "관악 버터공장", addr: "서울 관악구 관악로 145", region: "서울", area: "관악" },
+            { id: 19, name: "노량진 떡버터", addr: "서울 동작구 노량진로 150", region: "서울", area: "노량진" },
+            { id: 20, name: "금천 버터떡집", addr: "서울 금천구 시흥대로 410", region: "서울", area: "금천" },
+            { id: 21, name: "잠실 떡 팩토리", addr: "서울 송파구 백제고분로 300", region: "서울", area: "잠실" },
+            { id: 22, name: "강서 버터하우스", addr: "서울 강서구 공항대로 168", region: "서울", area: "강서" },
+            { id: 23, name: "동대문 떡공방", addr: "서울 동대문구 한천로 75", region: "서울", area: "동대문" },
+            { id: 24, name: "은평 버터떡카페", addr: "서울 은평구 연서로 320", region: "서울", area: "은평" },
+            { id: 25, name: "도봉 달콤버터", addr: "서울 도봉구 도봉로 400", region: "서울", area: "도봉" },
+            { id: 26, name: "분당 버터떡하우스", addr: "경기 성남시 분당구 정자일로 166", region: "경기", area: "분당" },
+            { id: 27, name: "수원 버터떡집", addr: "경기 수원시 팔달구 정조로 795", region: "경기", area: "수원" },
+            { id: 28, name: "용인 수지 떡카페", addr: "경기 용인시 수지구 성복로 74", region: "경기", area: "용인" },
+            { id: 29, name: "부산 버터떡마켓", addr: "부산 해운대구 우동로 143", region: "부산", area: "해운대" },
+            { id: 30, name: "부산 중앙 카페", addr: "부산 중구 중앙대로 77", region: "부산", area: "중앙" },
+            { id: 31, name: "대구 동성로 떡집", addr: "대구 중구 동성로 86", region: "대구", area: "동성로" },
+            { id: 32, name: "대구 반월당 베이커리", addr: "대구 중구 반월당로 43", region: "대구", area: "반월당" },
+            { id: 33, name: "인천 주안 버터떡", addr: "인천 남동구 주안로 45", region: "인천", area: "주안" },
+            { id: 34, name: "인천 송도 카페", addr: "인천 연수구 센트럴로 87", region: "인천", area: "송도" },
+            { id: 35, name: "광주 충장로 떡사랑", addr: "광주 동구 충장로 140", region: "광주", area: "충장로" },
+            { id: 36, name: "광주 문화전당 앞 베이커리", addr: "광주 동구 문화전당로 38", region: "광주", area: "문화전당" },
+            { id: 37, name: "대전 충무로 카페", addr: "대전 중구 충무로 145", region: "대전", area: "충무로" },
+            { id: 38, name: "대전 유성 베이커리", addr: "대전 유성구 원신흥로 100", region: "대전", area: "유성" },
+            { id: 39, name: "울산 태화로 카페", addr: "울산 남구 태화로 412", region: "울산", area: "태화로" },
+            { id: 40, name: "울산 중앙로 떡카페", addr: "울산 중구 중앙로 143", region: "울산", area: "중앙로" },
+            { id: 41, name: "전주 전주로 버터떡", addr: "전북 전주시 완산구 전주로 45", region: "전북", area: "전주로" },
+            { id: 42, name: "전주 한옥마을 카페", addr: "전북 전주시 완산구 기린대로 111", region: "전북", area: "한옥마을" }
+        ];
+
         // Check if user is in guest mode
         function checkGuestMode() {
             const params = new URLSearchParams(window.location.search);
@@ -1485,6 +1775,7 @@
         // Clear all authentication and redirect
         function clearAllAuth() {
             localStorage.removeItem('socialUser');
+            localStorage.removeItem('buttertteokmapSelectedStore');
             window.location.href = 'owner.html';
         }
 
@@ -1536,26 +1827,20 @@
 
         // Initialize from localStorage
         function initializeDashboard() {
-            const savedStock = localStorage.getItem('buttertteokmapStock');
-            const savedStatus = localStorage.getItem('buttertteokmapStatus');
-            const savedLastUpdated = localStorage.getItem('buttertteokmapLastUpdated');
-
-            if (savedStock) {
-                document.getElementById('stockInput').value = savedStock;
-                document.getElementById('stockDisplay').textContent = savedStock;
+            // Check if a store is already selected
+            const savedStoreId = getSelectedStoreId();
+            if (savedStoreId) {
+                selectedStoreId = savedStoreId;
+                applySelectedStore();
+            } else if (!isGuestMode) {
+                // No store selected - show store selector
+                showStoreSelector();
+            } else {
+                // Guest mode - show demo data
+                document.getElementById('storeName').textContent = '버터떡맵 체험점';
+                document.getElementById('storeAddress').textContent = '서울 강남구 테헤란로 123';
             }
 
-            if (savedStatus) {
-                currentStatus = savedStatus;
-                selectStatus(savedStatus);
-            }
-
-            if (savedLastUpdated) {
-                updateLastUpdatedDisplay(savedLastUpdated);
-            }
-
-            loadStoreInfo();
-            renderIssuedCoupons();
             setDefaultExpiry();
         }
 
@@ -1609,8 +1894,8 @@
             }
 
             // Save to localStorage
-            localStorage.setItem('buttertteokmapStock', stock);
-            localStorage.setItem('buttertteokmapStatus', currentStatus);
+            localStorage.setItem('buttertteokmapStock_' + (selectedStoreId || '1'), stock);
+            localStorage.setItem('buttertteokmapStatus_' + (selectedStoreId || '1'), currentStatus);
 
             const now = new Date();
             const timeString = now.toLocaleString('ko-KR', {
@@ -1620,7 +1905,7 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
-            localStorage.setItem('buttertteokmapLastUpdated', timeString);
+            localStorage.setItem('buttertteokmapLastUpdated_' + (selectedStoreId || '1'), timeString);
             updateLastUpdatedDisplay(timeString);
 
             showToast('재고가 업데이트되었습니다!');
@@ -1745,10 +2030,10 @@
             const imgEl = area.querySelector('img');
             const desc = document.getElementById('storeDescInput').value.trim();
 
-            // Save image (store id 1 as demo)
+            // Save image
             if (imgEl && imgEl.src) {
                 try {
-                    localStorage.setItem('buttertteokmapStoreImage_1', imgEl.src);
+                    localStorage.setItem('buttertteokmapStoreImage_' + (selectedStoreId || '1'), imgEl.src);
                 } catch (e) {
                     console.warn('Image too large for localStorage:', e);
                     showToast('이미지 용량이 너무 큽니다. 더 작은 이미지를 사용해주세요.');
@@ -1758,9 +2043,9 @@
 
             // Save description
             if (desc) {
-                localStorage.setItem('buttertteokmapStoreDesc_1', desc);
+                localStorage.setItem('buttertteokmapStoreDesc_' + (selectedStoreId || '1'), desc);
             } else {
-                localStorage.removeItem('buttertteokmapStoreDesc_1');
+                localStorage.removeItem('buttertteokmapStoreDesc_' + (selectedStoreId || '1'));
             }
 
             showToast('매장 정보가 저장되었습니다!');
@@ -1768,8 +2053,8 @@
 
         // Load saved store info on dashboard init
         function loadStoreInfo() {
-            const savedImage = localStorage.getItem('buttertteokmapStoreImage_1');
-            const savedDesc = localStorage.getItem('buttertteokmapStoreDesc_1');
+            const savedImage = localStorage.getItem('buttertteokmapStoreImage_' + (selectedStoreId || '1'));
+            const savedDesc = localStorage.getItem('buttertteokmapStoreDesc_' + (selectedStoreId || '1'));
 
             if (savedImage) {
                 displayUploadedImage(savedImage);
@@ -1816,12 +2101,12 @@
 
         function getStoreCoupons() {
             try {
-                return JSON.parse(localStorage.getItem('buttertteokmapStoreCoupons_1') || '[]');
+                return JSON.parse(localStorage.getItem('buttertteokmapStoreCoupons_' + (selectedStoreId || '1')) || '[]');
             } catch (e) { return []; }
         }
 
         function saveStoreCoupons(coupons) {
-            localStorage.setItem('buttertteokmapStoreCoupons_1', JSON.stringify(coupons));
+            localStorage.setItem('buttertteokmapStoreCoupons_' + (selectedStoreId || '1'), JSON.stringify(coupons));
             // Also update the global coupons for index.html to read
             updateGlobalCoupons();
         }
@@ -1829,10 +2114,11 @@
         function updateGlobalCoupons() {
             // Merge all store coupons into a global list for the user-facing coupon box
             const storeCoupons = getStoreCoupons();
+            const currentStore = getStoreById(selectedStoreId);
             const globalCoupons = storeCoupons.map(c => ({
                 id: c.id,
-                storeId: 1,
-                storeName: document.getElementById('storeName') ? document.getElementById('storeName').textContent : '버터떡맵 체험점',
+                storeId: selectedStoreId,
+                storeName: currentStore ? currentStore.name : '버터떡맵 체험점',
                 name: c.name,
                 type: c.type,
                 value: c.value,
@@ -1978,6 +2264,213 @@
             const d = new Date();
             d.setDate(d.getDate() + 30);
             document.getElementById('cpnExpiry').value = d.toISOString().split('T')[0];
+        }
+
+        // ============================================
+        // STORE SELECTION SYSTEM
+        // ============================================
+        function getSelectedStoreId() {
+            return localStorage.getItem('buttertteokmapSelectedStore');
+        }
+
+        function setSelectedStoreId(storeId) {
+            localStorage.setItem('buttertteokmapSelectedStore', storeId);
+            selectedStoreId = storeId;
+        }
+
+        function getStoreById(id) {
+            return allStores.find(s => s.id === parseInt(id));
+        }
+
+        function showStoreSelector() {
+            document.getElementById('storeSelectOverlay').style.display = 'flex';
+            document.getElementById('storeSearchInput').value = '';
+            renderStoreList(allStores);
+            setTimeout(() => document.getElementById('storeSearchInput').focus(), 100);
+        }
+
+        function hideStoreSelector() {
+            document.getElementById('storeSelectOverlay').style.display = 'none';
+        }
+
+        function filterStoreList() {
+            const q = document.getElementById('storeSearchInput').value.trim().toLowerCase();
+            if (!q) {
+                renderStoreList(allStores);
+                return;
+            }
+            const filtered = allStores.filter(s =>
+                s.name.toLowerCase().includes(q) ||
+                s.addr.toLowerCase().includes(q) ||
+                s.region.includes(q) ||
+                s.area.includes(q)
+            );
+            renderStoreList(filtered);
+        }
+
+        function renderStoreList(stores) {
+            const container = document.getElementById('storeSelectList');
+            if (stores.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 13px;">검색 결과가 없습니다.</div>';
+                return;
+            }
+            container.innerHTML = stores.map(s => `
+                <div class="store-select-item" onclick="selectStore(${s.id})">
+                    <div class="store-select-item-icon">🏪</div>
+                    <div class="store-select-item-info">
+                        <div class="store-select-item-name">${s.name}</div>
+                        <div class="store-select-item-addr">${s.addr}</div>
+                    </div>
+                    <div class="store-select-item-arrow">›</div>
+                </div>
+            `).join('');
+        }
+
+        function selectStore(storeId) {
+            setSelectedStoreId(storeId);
+            hideStoreSelector();
+            applySelectedStore();
+            showToast(getStoreById(storeId).name + ' 선택 완료!');
+        }
+
+        function applySelectedStore() {
+            const store = getStoreById(selectedStoreId);
+            if (!store) return;
+            document.getElementById('storeName').textContent = store.name;
+            document.getElementById('storeAddress').textContent = store.addr;
+            // Load store-specific data
+            loadStoreData();
+        }
+
+        function loadStoreData() {
+            if (!selectedStoreId) return;
+            const sid = selectedStoreId;
+
+            // Load stock
+            const savedStock = localStorage.getItem('buttertteokmapStock_' + sid);
+            const savedStatus = localStorage.getItem('buttertteokmapStatus_' + sid);
+            const savedLastUpdated = localStorage.getItem('buttertteokmapLastUpdated_' + sid);
+
+            if (savedStock) {
+                document.getElementById('stockInput').value = savedStock;
+                document.getElementById('stockDisplay').textContent = savedStock;
+            } else {
+                document.getElementById('stockInput').value = 45;
+                document.getElementById('stockDisplay').textContent = '45';
+            }
+
+            if (savedStatus) {
+                selectStatus(savedStatus);
+            } else {
+                selectStatus('available');
+            }
+
+            if (savedLastUpdated) {
+                updateLastUpdatedDisplay(savedLastUpdated);
+            } else {
+                document.getElementById('lastUpdated').textContent = '';
+            }
+
+            // Load store image and description
+            loadStoreInfo();
+
+            // Load custom menus
+            loadCustomMenus();
+
+            // Load coupons
+            renderIssuedCoupons();
+        }
+
+        // ============================================
+        // CUSTOM MENU SYSTEM
+        // ============================================
+        function getCustomMenus() {
+            if (!selectedStoreId) return [];
+            try {
+                return JSON.parse(localStorage.getItem('buttertteokmapMenus_' + selectedStoreId) || '[]');
+            } catch (e) { return []; }
+        }
+
+        function saveCustomMenus(menus) {
+            if (!selectedStoreId) return;
+            localStorage.setItem('buttertteokmapMenus_' + selectedStoreId, JSON.stringify(menus));
+        }
+
+        function addCustomMenu() {
+            const input = document.getElementById('newMenuInput');
+            const name = input.value.trim();
+            if (!name) {
+                showToast('메뉴 이름을 입력해주세요.');
+                return;
+            }
+
+            const menus = getCustomMenus();
+            if (menus.some(m => m.name === name)) {
+                showToast('이미 존재하는 메뉴입니다.');
+                return;
+            }
+
+            menus.push({ name: name, active: true });
+            saveCustomMenus(menus);
+            input.value = '';
+            loadCustomMenus();
+            showToast(name + ' 메뉴가 추가되었습니다!');
+        }
+
+        function deleteCustomMenu(menuName) {
+            if (!confirm(menuName + ' 메뉴를 삭제하시겠습니까?')) return;
+            let menus = getCustomMenus();
+            menus = menus.filter(m => m.name !== menuName);
+            saveCustomMenus(menus);
+            loadCustomMenus();
+            showToast('메뉴가 삭제되었습니다.');
+        }
+
+        function toggleCustomMenu(menuName) {
+            const menus = getCustomMenus();
+            const menu = menus.find(m => m.name === menuName);
+            if (menu) {
+                menu.active = !menu.active;
+                saveCustomMenus(menus);
+            }
+        }
+
+        function loadCustomMenus() {
+            const menus = getCustomMenus();
+            const menuList = document.getElementById('menuList');
+            if (!menuList) return;
+
+            // Keep default menus, append custom ones
+            const defaultMenusHTML = `
+                <li class="menu-item">
+                    <span class="menu-name">오리지널 버터떡</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">딸기크림치즈</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">솔티캬라멜</span>
+                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                </li>
+                <li class="menu-item">
+                    <span class="menu-name">흑임자</span>
+                    <button class="toggle-switch" onclick="toggleMenu(this)"></button>
+                </li>
+            `;
+
+            const customMenusHTML = menus.map(m => `
+                <li class="menu-item">
+                    <span class="menu-name">${m.name}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="toggle-switch${m.active ? ' active' : ''}" onclick="toggleMenu(this); toggleCustomMenu('${m.name}')"></button>
+                        <button class="menu-delete-btn" onclick="deleteCustomMenu('${m.name}')" title="삭제">✕</button>
+                    </div>
+                </li>
+            `).join('');
+
+            menuList.innerHTML = defaultMenusHTML + customMenusHTML;
         }
 
         // Handle Enter key on stock input
