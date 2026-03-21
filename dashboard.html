@@ -1596,38 +1596,18 @@
             <!-- Search results (existing + Kakao) -->
             <div class="store-select-list" id="storeSelectList"></div>
 
-            <!-- 신규 매장 등록 버튼 -->
+            <!-- 신규 매장 직접 등록 버튼 -->
             <div style="padding: 12px 20px;">
-                <button onclick="showRegisterStep()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #D4A574, #8B5E3C); color: white; border: none; border-radius: 14px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(139,94,60,0.3);">
-                    📝 신규 매장 등록하기
+                <button onclick="showManualRegister()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #D4A574, #8B5E3C); color: white; border: none; border-radius: 14px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(139,94,60,0.3);">
+                    📝 신규 매장 직접 등록하기
                 </button>
-                <p style="text-align: center; font-size: 11px; color: #999; margin-top: 6px;">검색에 없는 매장을 직접 등록할 수 있습니다</p>
+                <p style="text-align: center; font-size: 11px; color: #999; margin-top: 6px;">위 검색으로 찾을 수 없는 매장을 직접 등록합니다</p>
             </div>
 
-            <!-- STEP 1: 카카오 지도 검색 단계 -->
-            <div id="registerStep1" style="display: none; padding: 0 20px 16px;">
-                <div style="background: #FFF8F0; border: 1.5px solid #D4A574; border-radius: 16px; padding: 20px;">
-                    <h4 style="margin: 0 0 4px; font-size: 15px; color: #8B5E3C;">📍 Step 1. 매장 위치 찾기</h4>
-                    <p style="margin: 0 0 14px; font-size: 12px; color: #999;">카카오 지도에서 매장을 검색해주세요</p>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="regSearchInput" placeholder="매장명 또는 주소 입력"
-                               onkeypress="if(event.key==='Enter'){event.preventDefault(); searchForRegister();}"
-                               style="flex: 1; padding: 12px 14px; border: 1.5px solid #E8D5C4; border-radius: 12px; font-size: 13px; font-family: inherit; outline: none; background: white;">
-                        <button onclick="searchForRegister()" style="flex-shrink: 0; padding: 12px 18px; background: #03C75A; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;">🔍 검색</button>
-                    </div>
-                    <div id="regSearchResults" style="margin-top: 12px;"></div>
-                    <div style="text-align: center; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #E8D5C4;">
-                        <button onclick="showManualRegister()" style="background: none; border: none; color: #999; font-size: 12px; cursor: pointer; font-family: inherit; text-decoration: underline;">
-                            검색에 없어요, 직접 입력할게요 →
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 2: 매장 정보 입력 폼 -->
+            <!-- 매장 정보 입력 폼 (카카오 검색 선택 또는 직접 등록) -->
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <div style="padding: 0 20px 20px;">
-                    <div style="background: #F0FAF0; border: 1.5px solid #4CAF50; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;" id="selectedPlaceInfo">
+                    <div id="selectedPlaceInfo" style="background: #F0FAF0; border: 1.5px solid #4CAF50; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; display: none;">
                         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
                             <span style="font-size: 16px;">✅</span>
                             <span style="font-weight: 700; font-size: 14px; color: #2E7D32;" id="selectedPlaceName"></span>
@@ -1635,7 +1615,7 @@
                         <div style="font-size: 12px; color: #666; margin-left: 24px;" id="selectedPlaceAddr"></div>
                     </div>
 
-                    <h4 style="margin: 0 0 14px; font-size: 15px; color: #8B5E3C;">📋 Step 2. 매장 정보 입력</h4>
+                    <h4 style="margin: 0 0 14px; font-size: 15px; color: #8B5E3C;" id="registerFormTitle">📋 매장 정보 입력</h4>
 
                     <div class="store-register-form active" id="storeRegisterForm">
                         <div class="register-row">
@@ -2881,8 +2861,10 @@
             };
 
             // Show selected place info
+            document.getElementById('selectedPlaceInfo').style.display = 'block';
             document.getElementById('selectedPlaceName').textContent = placeData.name;
             document.getElementById('selectedPlaceAddr').textContent = placeData.addr;
+            document.getElementById('registerFormTitle').textContent = '📋 매장 정보 확인';
             document.getElementById('registerSection').style.display = 'block';
 
             // Auto-fill form fields
@@ -3052,96 +3034,24 @@
         // ============================================
         let selectedNaverPlace = null;
 
-        // 신규 매장 등록하기 버튼 → Step 1 카카오 검색 표시
-        function showRegisterStep() {
-            const step1 = document.getElementById('registerStep1');
-            if (step1.style.display === 'none') {
-                step1.style.display = 'block';
-                document.getElementById('registerSection').style.display = 'none';
-                document.getElementById('regSearchInput').value = '';
-                document.getElementById('regSearchResults').innerHTML = '';
-                step1.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            } else {
-                step1.style.display = 'none';
-                document.getElementById('registerSection').style.display = 'none';
-            }
-        }
-
-        // Step 1에서 카카오 검색
-        function searchForRegister() {
-            const query = document.getElementById('regSearchInput').value.trim();
-            if (!query) { showToast('검색어를 입력해주세요.'); return; }
-
-            const resultsEl = document.getElementById('regSearchResults');
-            resultsEl.innerHTML = '<div style="text-align:center; padding: 12px; color: #999; font-size: 13px;">🔍 검색 중...</div>';
-
-            if (window.kakaoPlaces) {
-                window.kakaoPlaces.keywordSearch(query, function(data, status) {
-                    if (status === kakao.maps.services.Status.OK && data.length > 0) {
-                        resultsEl.innerHTML = data.slice(0, 5).map(place => `
-                            <div onclick="selectRegPlace('${place.id}', '${place.place_name.replace(/'/g,"\\'")}', '${(place.road_address_name||place.address_name).replace(/'/g,"\\'")}', '${place.y}', '${place.x}', '${(place.phone||'').replace(/'/g,"\\'")}', '${place.place_url}')"
-                                 style="display: flex; align-items: center; gap: 12px; padding: 12px; margin-top: 8px; background: white; border: 1.5px solid #E8D5C4; border-radius: 12px; cursor: pointer; transition: all 0.2s;"
-                                 onmouseover="this.style.borderColor='#D4A574'; this.style.background='#FFFAF5'"
-                                 onmouseout="this.style.borderColor='#E8D5C4'; this.style.background='white'">
-                                <div style="width: 36px; height: 36px; background: #FFF3E0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">📍</div>
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 700; font-size: 13px; color: #333;">${place.place_name}</div>
-                                    <div style="font-size: 11px; color: #888; margin-top: 2px;">${place.road_address_name || place.address_name}</div>
-                                </div>
-                                <span style="color: #D4A574; font-size: 12px; flex-shrink: 0;">선택 ›</span>
-                            </div>
-                        `).join('');
-                    } else {
-                        resultsEl.innerHTML = '<div style="text-align:center; padding: 12px; color: #999; font-size: 13px;">검색 결과가 없습니다. 아래 \'직접 입력\'을 이용해주세요.</div>';
-                    }
-                });
-            } else {
-                resultsEl.innerHTML = '<div style="text-align:center; padding: 12px; color: #F4845F; font-size: 13px;">카카오 지도 로딩 중입니다. 잠시 후 다시 시도해주세요.</div>';
-            }
-        }
-
-        // 카카오 검색 결과 선택 → Step 2 폼으로 이동 + 자동입력
-        function selectRegPlace(kakaoId, name, addr, lat, lng, phone, placeUrl) {
-            selectedNaverPlace = { kakaoId, name, addr, lat, lng, phone, placeUrl };
-
-            // 이미 등록된 매장인지 체크
-            const customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
-            if (customStores.some(s => s.kakaoId === kakaoId)) {
-                showToast('이미 등록된 매장입니다!');
+        // 직접 입력 모드 (신규 매장 직접 등록)
+        function showManualRegister() {
+            const section = document.getElementById('registerSection');
+            if (section.style.display !== 'none') {
+                section.style.display = 'none';
                 return;
             }
-
-            document.getElementById('selectedPlaceName').textContent = name;
-            document.getElementById('selectedPlaceAddr').textContent = addr;
-            document.getElementById('regStoreName').value = name;
-            document.getElementById('regStorePhone').value = phone || '';
-
-            // 지역 자동 추출
-            const regionMatch = addr.match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
-            document.getElementById('regStoreRegion').value = regionMatch ? regionMatch[1] : '';
-            document.getElementById('regStoreType').value = '';
-            document.getElementById('regStoreMenu').value = '';
-            document.getElementById('regStorePrice').value = '';
-
-            document.getElementById('registerStep1').style.display = 'none';
-            document.getElementById('registerSection').style.display = 'block';
-            document.getElementById('registerSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // 직접 입력 모드
-        function showManualRegister() {
             selectedNaverPlace = { name: '', addr: '직접 입력' };
-            document.getElementById('selectedPlaceName').textContent = '직접 입력 등록';
-            document.getElementById('selectedPlaceAddr').textContent = '매장 정보를 직접 입력해주세요';
+            document.getElementById('selectedPlaceInfo').style.display = 'none';
+            document.getElementById('registerFormTitle').textContent = '📋 매장 정보를 직접 입력해주세요';
             document.getElementById('regStoreName').value = '';
             document.getElementById('regStoreRegion').value = '';
             document.getElementById('regStoreType').value = '';
             document.getElementById('regStoreMenu').value = '';
             document.getElementById('regStorePrice').value = '';
             document.getElementById('regStorePhone').value = '';
-            document.getElementById('registerStep1').style.display = 'none';
-            document.getElementById('registerSection').style.display = 'block';
-            document.getElementById('registerSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            section.style.display = 'block';
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function registerNewStore() {
