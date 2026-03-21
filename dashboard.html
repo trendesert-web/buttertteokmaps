@@ -1596,7 +1596,15 @@
             <!-- Search results (existing + Kakao) -->
             <div class="store-select-list" id="storeSelectList"></div>
 
-            <!-- Registration form (hidden until a place is selected) -->
+            <!-- 신규 매장 등록 버튼 -->
+            <div style="padding: 12px 20px;">
+                <button onclick="showManualRegister()" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #D4A574, #8B5E3C); color: white; border: none; border-radius: 14px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 8px rgba(139,94,60,0.3);">
+                    📝 신규 매장 등록하기
+                </button>
+                <p style="text-align: center; font-size: 11px; color: #999; margin-top: 6px;">검색에 없는 매장을 직접 등록할 수 있습니다</p>
+            </div>
+
+            <!-- Registration form (hidden until a place is selected or manual) -->
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <div class="selected-place-info active" id="selectedPlaceInfo" style="margin: 0 0 16px;">
                     <div class="selected-place-name" id="selectedPlaceName"></div>
@@ -3016,6 +3024,21 @@
         // NEW STORE REGISTRATION (Naver Map based)
         // ============================================
         let selectedNaverPlace = null;
+
+        function showManualRegister() {
+            selectedNaverPlace = { name: '', addr: '직접 입력' };
+            document.getElementById('selectedPlaceName').textContent = '신규 매장 직접 등록';
+            document.getElementById('selectedPlaceAddr').textContent = '아래 정보를 직접 입력해주세요';
+            document.getElementById('selectedPlaceInfo').querySelector('.selected-place-check').textContent = '📝 직접 등록 모드';
+            document.getElementById('regStoreName').value = '';
+            document.getElementById('regStoreRegion').value = '';
+            document.getElementById('regStoreType').value = '';
+            document.getElementById('regStoreMenu').value = '';
+            document.getElementById('regStorePrice').value = '';
+            document.getElementById('regStorePhone').value = '';
+            document.getElementById('registerSection').style.display = 'block';
+            document.getElementById('registerSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
 
         function registerNewStore() {
             const name = document.getElementById('regStoreName').value.trim();
