@@ -692,112 +692,204 @@
     }
 
     /* === COUPON SYSTEM === */
+    .coupon-modal-content {
+      max-height: 75vh;
+      overflow-y: auto;
+    }
+
+    .coupon-code-input-section {
+      background: linear-gradient(135deg, rgba(212, 165, 116, 0.08), rgba(244, 132, 95, 0.06));
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .coupon-code-input-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 12px;
+    }
+
+    .coupon-code-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .coupon-code-field {
+      flex: 1;
+      padding: 12px 14px;
+      border: 2px solid rgba(212, 165, 116, 0.25);
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--color-text-primary);
+      background: white;
+      outline: none;
+      text-align: center;
+    }
+
+    .coupon-code-field:focus {
+      border-color: var(--color-primary);
+    }
+
+    .coupon-code-field::placeholder {
+      color: var(--color-text-secondary);
+      opacity: 0.4;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .coupon-claim-btn {
+      padding: 12px 18px;
+      background: linear-gradient(135deg, var(--color-accent), #E86B4A);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .coupon-claim-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(244, 132, 95, 0.3);
+    }
+
+    .my-coupons-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .coupon-card {
       background: white;
-      border: 2px dashed var(--color-primary);
+      border: 1.5px solid rgba(212, 165, 116, 0.15);
       border-radius: 14px;
       padding: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       position: relative;
       overflow: hidden;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
     .coupon-card::before {
       content: '';
       position: absolute;
-      top: 0;
       left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--color-primary);
     }
 
     .coupon-card.used {
       opacity: 0.5;
-      border-color: #ccc;
+      background: #f5f3f0;
     }
 
     .coupon-card.used::before {
       background: #ccc;
     }
 
-    .coupon-header {
+    .coupon-card-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 8px;
     }
 
-    .coupon-discount {
-      font-size: 22px;
+    .coupon-store-name {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    .coupon-discount-tag {
+      background: linear-gradient(135deg, var(--color-accent), #E86B4A);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 13px;
       font-weight: 800;
-      color: var(--color-accent);
     }
 
-    .coupon-badge {
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 700;
-      background: rgba(244, 132, 95, 0.12);
-      color: var(--color-accent);
-    }
-
-    .coupon-badge.new { background: rgba(107, 175, 123, 0.12); color: var(--color-success); }
-
-    .coupon-title {
-      font-size: 14px;
+    .coupon-card-name {
+      font-size: 15px;
       font-weight: 700;
       color: var(--color-text-primary);
       margin-bottom: 4px;
     }
 
-    .coupon-desc {
+    .coupon-card-desc {
       font-size: 12px;
       color: var(--color-text-secondary);
-      margin-bottom: 10px;
-      line-height: 1.4;
+      margin-bottom: 8px;
     }
 
-    .coupon-footer {
+    .coupon-card-bottom {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .coupon-expiry {
+    .coupon-card-meta {
       font-size: 11px;
       color: var(--color-text-secondary);
     }
 
     .coupon-use-btn {
-      padding: 6px 14px;
-      border-radius: 8px;
-      border: none;
-      background: var(--color-primary);
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
       color: white;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
+      border: none;
+      border-radius: 10px;
       font-family: inherit;
-      transition: all 0.2s ease;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
     .coupon-use-btn:hover {
-      background: #C49563;
+      transform: translateY(-1px);
     }
 
     .coupon-use-btn:disabled {
       background: #ccc;
-      cursor: default;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .coupon-empty {
       text-align: center;
-      padding: 24px;
+      padding: 30px;
       color: var(--color-text-secondary);
       font-size: 13px;
+    }
+
+    .coupon-empty-icon {
+      font-size: 40px;
+      margin-bottom: 8px;
+    }
+
+    .coupon-hint {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      text-align: center;
+      margin-top: 6px;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -926,12 +1018,22 @@
 
 <!-- Coupon Box Modal -->
 <div class="modal-overlay" id="couponModal">
-  <div class="modal" style="max-width: 400px;">
-    <h2>🎫 버터떡 쿠폰함</h2>
-    <div id="couponList"></div>
-    <div style="margin-top: 16px; padding: 12px; background: rgba(212,165,116,0.06); border-radius: 10px; font-size: 12px; color: var(--color-text-secondary); line-height: 1.6;">
-      ※ 쿠폰은 매장 방문 시 화면을 보여주세요.<br>
-      ※ 다른 할인과 중복 사용 불가합니다.
+  <div class="modal">
+    <h2>🎫 내 쿠폰함</h2>
+    <div class="coupon-modal-content">
+      <!-- Code Input Section -->
+      <div class="coupon-code-input-section">
+        <div class="coupon-code-input-title">쿠폰 코드 입력</div>
+        <div class="coupon-code-input-row">
+          <input type="text" class="coupon-code-field" id="couponCodeInput" placeholder="코드 입력" maxlength="20" onkeypress="if(event.key==='Enter')claimCoupon()">
+          <button class="coupon-claim-btn" onclick="claimCoupon()">등록</button>
+        </div>
+        <div class="coupon-hint">사장님에게 받은 쿠폰 코드를 입력하세요</div>
+      </div>
+
+      <!-- My Coupons -->
+      <div class="my-coupons-title">🎟️ 내가 받은 쿠폰</div>
+      <div id="myCouponList"></div>
     </div>
     <button class="close-modal" onclick="closeCouponBox()">닫기</button>
   </div>
@@ -1307,93 +1409,153 @@
   });
 
   // ============================================
-  // COUPON SYSTEM
+  // COUPON SYSTEM (Store-owner issued)
   // ============================================
-  const defaultCoupons = [
-    {
-      id: 'welcome2026',
-      title: '웰컴 쿠폰',
-      discount: '10% OFF',
-      desc: '첫 방문 고객 전 메뉴 10% 할인',
-      expiry: '2026-06-30',
-      badge: 'NEW',
-      badgeClass: 'new'
-    },
-    {
-      id: 'butter3free',
-      title: '3+1 이벤트',
-      discount: '1개 무료',
-      desc: '버터떡 3개 구매 시 1개 추가 증정',
-      expiry: '2026-04-30',
-      badge: '인기',
-      badgeClass: ''
-    },
-    {
-      id: 'spring2026',
-      title: '봄맞이 할인',
-      discount: '2,000원 OFF',
-      desc: '세트 메뉴 주문 시 2,000원 할인',
-      expiry: '2026-05-31',
-      badge: '시즌',
-      badgeClass: ''
-    },
-    {
-      id: 'review500',
-      title: '리뷰 작성 쿠폰',
-      discount: '500원 OFF',
-      desc: '네이버/카카오 리뷰 작성 후 사용 가능',
-      expiry: '2026-12-31',
-      badge: '상시',
-      badgeClass: ''
-    }
-  ];
 
-  function getUsedCoupons() {
+  // Get coupons the user has claimed
+  function getMyCoupons() {
     try {
-      return JSON.parse(localStorage.getItem('buttertteokmapUsedCoupons') || '[]');
-    } catch { return []; }
+      return JSON.parse(localStorage.getItem('buttertteokmapMyCoupons') || '[]');
+    } catch (e) { return []; }
+  }
+
+  function saveMyCoupons(coupons) {
+    localStorage.setItem('buttertteokmapMyCoupons', JSON.stringify(coupons));
+  }
+
+  // Get all globally available coupons (set by store owners from dashboard)
+  function getGlobalCoupons() {
+    try {
+      return JSON.parse(localStorage.getItem('buttertteokmapGlobalCoupons') || '[]');
+    } catch (e) { return []; }
+  }
+
+  function getDiscountText(coupon) {
+    if (coupon.type === 'percent') return coupon.value + '%';
+    if (coupon.type === 'amount') return coupon.value.toLocaleString() + '원';
+    if (coupon.type === 'bonus') return '+' + coupon.value + '개';
+    return coupon.value;
+  }
+
+  function claimCoupon() {
+    const codeInput = document.getElementById('couponCodeInput');
+    const code = codeInput.value.trim().toUpperCase();
+
+    if (!code) {
+      alert('쿠폰 코드를 입력해주세요.');
+      return;
+    }
+
+    // Search in global coupons
+    const globalCoupons = getGlobalCoupons();
+    const found = globalCoupons.find(c => c.code === code);
+
+    if (!found) {
+      alert('유효하지 않은 쿠폰 코드입니다.\n코드를 다시 확인해주세요.');
+      return;
+    }
+
+    // Check if expired
+    const today = new Date().toISOString().split('T')[0];
+    if (found.expiry < today) {
+      alert('만료된 쿠폰입니다.');
+      return;
+    }
+
+    // Check remaining quantity
+    if (found.used >= found.quantity) {
+      alert('쿠폰이 모두 소진되었습니다.');
+      return;
+    }
+
+    // Check if already claimed
+    const myCoupons = getMyCoupons();
+    if (myCoupons.some(c => c.code === code)) {
+      alert('이미 등록한 쿠폰입니다.');
+      return;
+    }
+
+    // Claim it
+    myCoupons.push({
+      ...found,
+      claimedAt: new Date().toISOString(),
+      isUsed: false
+    });
+    saveMyCoupons(myCoupons);
+
+    // Update used count in global (for this demo)
+    found.used = (found.used || 0) + 1;
+    localStorage.setItem('buttertteokmapGlobalCoupons', JSON.stringify(globalCoupons));
+
+    codeInput.value = '';
+    renderMyCoupons();
+    alert('🎉 쿠폰이 등록되었습니다!\n매장 방문 시 사용해주세요.');
+  }
+
+  function useMyCoupon(couponCode) {
+    if (!confirm('이 쿠폰을 사용하시겠습니까?\n매장 직원에게 화면을 보여주세요.')) return;
+
+    const myCoupons = getMyCoupons();
+    const idx = myCoupons.findIndex(c => c.code === couponCode && !c.isUsed);
+    if (idx === -1) return;
+
+    myCoupons[idx].isUsed = true;
+    myCoupons[idx].usedAt = new Date().toISOString();
+    saveMyCoupons(myCoupons);
+    renderMyCoupons();
+    alert('✅ 쿠폰이 사용되었습니다!');
+  }
+
+  function renderMyCoupons() {
+    const myCoupons = getMyCoupons();
+    const container = document.getElementById('myCouponList');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (myCoupons.length === 0) {
+      container.innerHTML = '<div class="coupon-empty"><div class="coupon-empty-icon">🎫</div>등록된 쿠폰이 없습니다.<br>사장님에게 받은 코드를 입력해보세요!</div>';
+      return;
+    }
+
+    // Sort: usable first, then used, then expired
+    const sorted = [...myCoupons].sort((a, b) => {
+      const aUsable = !a.isUsed && a.expiry >= today ? 0 : 1;
+      const bUsable = !b.isUsed && b.expiry >= today ? 0 : 1;
+      return aUsable - bUsable;
+    });
+
+    container.innerHTML = sorted.map(c => {
+      const isExpired = c.expiry < today;
+      const isUsed = c.isUsed;
+      const disabled = isUsed || isExpired;
+      const statusText = isUsed ? '사용완료' : isExpired ? '만료' : '';
+
+      return `
+        <div class="coupon-card${disabled ? ' used' : ''}">
+          <div class="coupon-card-top">
+            <div>
+              <div class="coupon-store-name">📍 ${c.storeName || '버터떡맵'}</div>
+            </div>
+            <div class="coupon-discount-tag">${getDiscountText(c)}</div>
+          </div>
+          <div class="coupon-card-name">${c.name}</div>
+          ${c.desc ? '<div class="coupon-card-desc">' + c.desc + '</div>' : ''}
+          <div class="coupon-card-bottom">
+            <div class="coupon-card-meta">
+              ~${c.expiry}${c.minOrder > 0 ? ' · ' + c.minOrder.toLocaleString() + '원 이상' : ''}
+              ${statusText ? ' · <b>' + statusText + '</b>' : ''}
+            </div>
+            <button class="coupon-use-btn" ${disabled ? 'disabled' : ''} onclick="useMyCoupon('${c.code}')">
+              ${isUsed ? '✓ 사용완료' : isExpired ? '만료됨' : '사용하기'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   function openCouponBox() {
-    const used = getUsedCoupons();
-    const listEl = document.getElementById('couponList');
-
-    if (defaultCoupons.length === 0) {
-      listEl.innerHTML = '<div class="coupon-empty">🎫 사용 가능한 쿠폰이 없습니다.</div>';
-    } else {
-      listEl.innerHTML = defaultCoupons.map(c => {
-        const isUsed = used.includes(c.id);
-        const isExpired = new Date(c.expiry) < new Date();
-        const disabled = isUsed || isExpired;
-        return `
-          <div class="coupon-card${disabled ? ' used' : ''}">
-            <div class="coupon-header">
-              <span class="coupon-discount">${c.discount}</span>
-              <span class="coupon-badge ${c.badgeClass}">${isUsed ? '사용완료' : isExpired ? '만료' : c.badge}</span>
-            </div>
-            <div class="coupon-title">${c.title}</div>
-            <div class="coupon-desc">${c.desc}</div>
-            <div class="coupon-footer">
-              <span class="coupon-expiry">~ ${c.expiry}</span>
-              <button class="coupon-use-btn" ${disabled ? 'disabled' : ''} onclick="useCoupon('${c.id}')">
-                ${isUsed ? '사용완료' : isExpired ? '만료됨' : '사용하기'}
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
+    renderMyCoupons();
     document.getElementById('couponModal').classList.add('active');
-  }
-
-  function useCoupon(couponId) {
-    if (confirm('이 쿠폰을 사용하시겠습니까?\\n매장 직원에게 화면을 보여주세요.')) {
-      const used = getUsedCoupons();
-      used.push(couponId);
-      localStorage.setItem('buttertteokmapUsedCoupons', JSON.stringify(used));
-      openCouponBox(); // refresh
-    }
   }
 
   function closeCouponBox() {
