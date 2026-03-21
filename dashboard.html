@@ -1926,7 +1926,7 @@
     </div>
 
     <!-- Kakao Maps SDK for Place Search -->
-    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services"></script>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services&autoload=false"></script>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -2628,7 +2628,15 @@
         }
 
         function getStoreById(id) {
-            return allStores.find(s => s.id === parseInt(id));
+            const numId = parseInt(id);
+            // Search in allStores first
+            let store = allStores.find(s => s.id === numId);
+            if (store) return store;
+            // Then search in custom stores from localStorage
+            try {
+                const custom = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+                return custom.find(s => s.id === numId) || null;
+            } catch(e) { return null; }
         }
 
         function showStoreSelector() {
@@ -2644,24 +2652,76 @@
 
         let searchDebounceTimer = null;
         let kakaoPlaces = null;
+        let kakaoSDKReady = false;
 
         function initKakaoPlaces() {
+            if (kakaoPlaces) return;
             try {
-                if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
-                    kakaoPlaces = new kakao.maps.services.Places();
-                    console.log('✅ Kakao Places initialized');
+                if (window.kakao && window.kakao.maps) {
+                    kakao.maps.load(function() {
+                        try {
+                            kakaoPlaces = new kakao.maps.services.Places();
+                            kakaoSDKReady = true;
+                            console.log('✅ Kakao Places SDK initialized');
+                        } catch(e) {
+                            console.error('❌ Kakao Places creation failed:', e);
+                        }
+                    });
                 } else {
-                    console.warn('⚠️ Kakao Maps SDK not ready, retrying in 1s...');
-                    setTimeout(initKakaoPlaces, 1000);
+                    console.warn('⚠️ Kakao Maps SDK not available');
                 }
-            } catch (e) {
-                console.warn('Kakao Places init failed:', e);
-                setTimeout(initKakaoPlaces, 1000);
+            } catch(e) {
+                console.error('❌ Kakao init error:', e);
             }
         }
 
-        // Initialize immediately
-        initKakaoPlaces();
+        // 장소 검색 통합 함수 (SDK 우선, fallback 없음)
+        function searchPlaces(query, callback) {
+            // SDK가 준비됐으면 SDK 사용
+            if (kakaoSDKReady && kakaoPlaces) {
+                kakaoPlaces.keywordSearch(query, function(data, status) {
+                    if (status === kakao.maps.services.Status.OK && data.length > 0) {
+                        const results = data.map(p => ({
+                            kakaoId: p.id,
+                            name: p.place_name,
+                            addr: p.road_address_name || p.address_name,
+                            category: p.category_group_name || p.category_name || '',
+                            phone: p.phone || '',
+                            lat: parseFloat(p.y),
+                            lng: parseFloat(p.x),
+                            placeUrl: p.place_url || ''
+                        }));
+                        callback(results);
+                    } else {
+                        console.warn('Kakao SDK search - status:', status);
+                        callback([]);
+                    }
+                });
+                return;
+            }
+
+            // SDK 안됐으면 초기화 시도 후 재시도
+            if (!kakaoSDKReady) {
+                initKakaoPlaces();
+                // 1초 후 재시도
+                setTimeout(function() {
+                    if (kakaoSDKReady && kakaoPlaces) {
+                        searchPlaces(query, callback);
+                    } else {
+                        console.error('❌ Kakao SDK not available for search');
+                        callback([]);
+                    }
+                }, 1500);
+                return;
+            }
+
+            callback([]);
+        }
+
+        // 페이지 로드 시 SDK 초기화
+        window.addEventListener('load', function() {
+            setTimeout(initKakaoPlaces, 300);
+        });
 
         function filterStoreList() {
             const q = document.getElementById('storeSearchInput').value.trim();
@@ -2693,24 +2753,9 @@
         }
 
         function searchKakaoPlaces(query, existingResults) {
-            if (!kakaoPlaces) { initKakaoPlaces(); renderMixedResults(existingResults, [], query); return; }
-            kakaoPlaces.keywordSearch(query, function(data, status) {
-                    if (status === kakao.maps.services.Status.OK) {
-                        const kakaoResults = data.slice(0, 8).map(p => ({
-                            kakaoId: p.id,
-                            name: p.place_name,
-                            addr: p.road_address_name || p.address_name,
-                            category: p.category_group_name || '',
-                            phone: p.phone || '',
-                            lat: parseFloat(p.y),
-                            lng: parseFloat(p.x),
-                            placeUrl: p.place_url
-                        }));
-                        renderMixedResults(existingResults, kakaoResults, query);
-                    } else {
-                        renderMixedResults(existingResults, [], query);
-                    }
-                });
+            searchPlaces(query, function(kakaoResults) {
+                renderMixedResults(existingResults, kakaoResults.slice(0, 8), query);
+            });
         }
 
         function renderMixedResults(existingStores, kakaoResults, query) {
@@ -2733,6 +2778,7 @@
             }
 
             // Kakao real place results
+            window._kakaoSearchResults = []; // Store results globally for safe onclick
             if (kakaoResults.length > 0) {
                 // Filter out places already in our list
                 const existingNames = existingStores.map(s => s.name.toLowerCase());
@@ -2741,9 +2787,10 @@
                 );
 
                 if (newKakao.length > 0) {
+                    window._kakaoSearchResults = newKakao;
                     html += '<div class="search-divider">지도 검색 결과</div>';
-                    html += newKakao.map(k => `
-                        <div class="store-select-item" onclick="selectKakaoPlace(${JSON.stringify(k).replace(/"/g, '&quot;')})">
+                    html += newKakao.map((k, idx) => `
+                        <div class="store-select-item" onclick="selectKakaoPlace(window._kakaoSearchResults[${idx}])">
                             <div class="store-select-item-icon">📍</div>
                             <div class="store-select-item-info">
                                 <div class="store-select-item-name">${k.name} <span class="store-select-item-badge kakao">지도</span></div>
@@ -2795,7 +2842,8 @@
             setSelectedStoreId(storeId);
             hideStoreSelector();
             applySelectedStore();
-            showToast(getStoreById(storeId).name + ' 선택 완료!');
+            const store = getStoreById(storeId);
+            showToast((store ? store.name : '매장') + ' 선택 완료!');
         }
 
         // Trigger search button (force Kakao API search)
@@ -2804,7 +2852,7 @@
             if (!q) { showToast('매장명을 입력해주세요.'); return; }
             if (q.length < 2) { showToast('2글자 이상 입력해주세요.'); return; }
 
-            // Filter existing
+            // Filter existing stores
             const qLower = q.toLowerCase();
             const filtered = allStores.filter(s =>
                 s.name.toLowerCase().includes(qLower) ||
@@ -2815,29 +2863,13 @@
 
             // Show loading
             const container = document.getElementById('storeSelectList');
-            container.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
+            container.innerHTML = '<div class="search-loading">🔍 카카오 지도에서 검색 중...</div>';
 
-            // Force Kakao search immediately
-            if (!kakaoPlaces) {
-                initKakaoPlaces();
-                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #F4845F; font-size: 13px;">카카오 지도를 불러오는 중입니다. 잠시 후 다시 검색해주세요.</div>';
-                return;
-            }
-            kakaoPlaces.keywordSearch(q, function(data, status) {
-                if (status === kakao.maps.services.Status.OK) {
-                    const kakaoResults = data.slice(0, 10).map(p => ({
-                        kakaoId: p.id,
-                        name: p.place_name,
-                        addr: p.road_address_name || p.address_name,
-                        category: p.category_group_name || p.category_name || '',
-                        phone: p.phone || '',
-                        lat: parseFloat(p.y),
-                        lng: parseFloat(p.x),
-                        placeUrl: p.place_url
-                    }));
-                    renderMixedResults(filtered, kakaoResults, q);
-                } else {
-                    renderMixedResults(filtered, [], q);
+            // 통합 검색 함수 사용
+            searchPlaces(q, function(kakaoResults) {
+                renderMixedResults(filtered, kakaoResults, q);
+                if (kakaoResults.length === 0 && filtered.length === 0) {
+                    showToast('검색 결과가 없습니다.');
                 }
             });
         }
@@ -3131,7 +3163,14 @@
                 name: newStore.name,
                 addr: newStore.addr,
                 region: newStore.region,
-                area: newStore.area
+                area: newStore.area,
+                type: newStore.type,
+                menu: newStore.menu,
+                price: newStore.price,
+                phone: newStore.phone,
+                kakaoId: newStore.kakaoId,
+                lat: newStore.lat,
+                lng: newStore.lng
             });
 
             // Select this store (bypass password since just registered)
@@ -3163,12 +3202,20 @@
                         allStores.push({
                             id: s.id,
                             name: s.name,
-                            addr: s.addr,
-                            region: s.region,
-                            area: s.area
+                            addr: s.addr || '',
+                            region: s.region || '',
+                            area: s.area || s.region || '',
+                            type: s.type || '',
+                            menu: s.menu || '',
+                            price: s.price || '',
+                            phone: s.phone || '',
+                            kakaoId: s.kakaoId || null,
+                            lat: s.lat || null,
+                            lng: s.lng || null
                         });
                     }
                 });
+                console.log('✅ Loaded ' + customStores.length + ' custom stores');
             } catch (e) { console.error('Failed to load custom stores:', e); }
         }
 
