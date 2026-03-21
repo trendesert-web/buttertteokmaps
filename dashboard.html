@@ -57,10 +57,58 @@
             flex: 1;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #FFF8E7;
+            font-size: 14px;
+        }
+
+        .profile-photo {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+        }
+
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .guest-badge {
+            display: inline-block;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         .logout-btn {
             background-color: rgba(0, 0, 0, 0.2);
             padding: 8px 16px;
             border-radius: 6px;
+            border: none;
+            color: #FFF8E7;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
         }
 
         .logout-btn:hover {
@@ -72,6 +120,28 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        /* Loading Spinner */
+        .auth-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #FFF8E7;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(232, 168, 56, 0.2);
+            border-top-color: #E8A838;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* Store Info Card */
@@ -118,6 +188,18 @@
         .status-badge.soldout {
             background-color: #FFEBEE;
             color: #C62828;
+        }
+
+        /* Guest Mode Alert */
+        .guest-mode-alert {
+            background-color: #FFF3E0;
+            border-left: 4px solid #FF9800;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: #E65100;
+            font-weight: 500;
         }
 
         /* Quick Stock Update Section */
@@ -432,6 +514,7 @@
         @media (max-width: 480px) {
             header {
                 padding: 12px;
+                flex-wrap: wrap;
             }
 
             header h1 {
@@ -441,6 +524,12 @@
             header a {
                 font-size: 14px;
                 padding: 6px 10px;
+            }
+
+            .header-right {
+                width: 100%;
+                margin-top: 12px;
+                justify-content: space-between;
             }
 
             .container {
@@ -460,96 +549,213 @@
                 font-size: 12px;
                 padding: 12px 8px;
             }
+
+            .user-profile {
+                font-size: 12px;
+                gap: 6px;
+            }
         }
     </style>
 </head>
 <body>
-    <header>
-        <a href="index.html">← 돌아가기</a>
-        <h1>🧈 재고 관리</h1>
-        <button class="logout-btn" onclick="logout()">로그아웃</button>
-    </header>
-
-    <div class="container">
-        <!-- Store Info Card -->
-        <div class="store-info-card">
-            <div class="store-name">체험 매장</div>
-            <div class="store-address">서울 강남구 테헤란로 123</div>
-            <span class="status-badge available" id="statusBadgeDisplay">🟢 판매중</span>
-        </div>
-
-        <!-- Quick Stock Update Section -->
-        <div class="stock-section">
-            <h2 class="section-title">재고 수량</h2>
-
-            <div class="stock-input-wrapper">
-                <label class="stock-label">현재 재고</label>
-                <input type="number" id="stockInput" class="stock-input" value="45" min="0" inputmode="numeric">
-            </div>
-
-            <h2 class="section-title" style="font-size: 14px; margin-top: 24px; margin-bottom: 12px;">상태 선택</h2>
-            <div class="status-buttons">
-                <button class="status-btn available active" onclick="selectStatus('available')">🟢 판매중</button>
-                <button class="status-btn low" onclick="selectStatus('low')">🟡 품절임박</button>
-                <button class="status-btn soldout" onclick="selectStatus('soldout')">🔴 품절</button>
-            </div>
-
-            <button class="update-btn" onclick="updateStock()">재고 업데이트</button>
-            <div class="last-updated" id="lastUpdated"></div>
-        </div>
-
-        <!-- Menu Management Section -->
-        <div class="menu-section">
-            <h2 class="section-title">메뉴 관리</h2>
-            <ul class="menu-list">
-                <li class="menu-item">
-                    <span class="menu-name">오리지널 버터떡</span>
-                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
-                </li>
-                <li class="menu-item">
-                    <span class="menu-name">딸기크림치즈</span>
-                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
-                </li>
-                <li class="menu-item">
-                    <span class="menu-name">솔티캬라멜</span>
-                    <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
-                </li>
-                <li class="menu-item">
-                    <span class="menu-name">흑임자</span>
-                    <button class="toggle-switch" onclick="toggleMenu(this)"></button>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Today's Stats Card -->
-        <div class="stats-card">
-            <h2 class="section-title" style="margin-bottom: 16px;">통계</h2>
-            <div class="stat-row">
-                <span class="stat-label">오늘 조회수</span>
-                <span class="stat-value">128회</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">이번 주 조회수</span>
-                <span class="stat-value">892회</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">등록일</span>
-                <span class="stat-value">2026-03-21</span>
-            </div>
-        </div>
-
-        <!-- Notice Section -->
-        <div class="notice-section">
-            <strong>※ 중요 안내</strong>
-            <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
-            <div class="contact-info">문의: buttertteokmaps@gmail.com</div>
-        </div>
+    <div id="authLoading" class="auth-loading" style="display: none;">
+        <div class="spinner"></div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div id="mainContent" style="display: none;">
+        <header>
+            <a href="index.html">← 돌아가기</a>
+            <h1>🧈 재고 관리</h1>
+            <div class="header-right">
+                <div class="user-profile" id="userProfile">
+                    <div class="profile-photo" id="profilePhoto">👤</div>
+                    <span id="userName">사용자</span>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()">로그아웃</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Guest Mode Alert -->
+            <div id="guestModeAlert" class="guest-mode-alert" style="display: none;">
+                <strong>체험 모드 (Guest)</strong><br>
+                현재 로그인 없이 체험 모드로 접근하고 있습니다. 일부 기능이 제한될 수 있습니다.
+            </div>
+
+            <!-- Store Info Card -->
+            <div class="store-info-card">
+                <div class="store-name">체험 매장</div>
+                <div class="store-address">서울 강남구 테헤란로 123</div>
+                <span class="status-badge available" id="statusBadgeDisplay">🟢 판매중</span>
+            </div>
+
+            <!-- Quick Stock Update Section -->
+            <div class="stock-section">
+                <h2 class="section-title">재고 수량</h2>
+
+                <div class="stock-input-wrapper">
+                    <label class="stock-label">현재 재고</label>
+                    <input type="number" id="stockInput" class="stock-input" value="45" min="0" inputmode="numeric">
+                </div>
+
+                <h2 class="section-title" style="font-size: 14px; margin-top: 24px; margin-bottom: 12px;">상태 선택</h2>
+                <div class="status-buttons">
+                    <button class="status-btn available active" onclick="selectStatus('available')">🟢 판매중</button>
+                    <button class="status-btn low" onclick="selectStatus('low')">🟡 품절임박</button>
+                    <button class="status-btn soldout" onclick="selectStatus('soldout')">🔴 품절</button>
+                </div>
+
+                <button class="update-btn" onclick="updateStock()">재고 업데이트</button>
+                <div class="last-updated" id="lastUpdated"></div>
+            </div>
+
+            <!-- Menu Management Section -->
+            <div class="menu-section">
+                <h2 class="section-title">메뉴 관리</h2>
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <span class="menu-name">오리지널 버터떡</span>
+                        <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-name">딸기크림치즈</span>
+                        <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-name">솔티캬라멜</span>
+                        <button class="toggle-switch active" onclick="toggleMenu(this)"></button>
+                    </li>
+                    <li class="menu-item">
+                        <span class="menu-name">흑임자</span>
+                        <button class="toggle-switch" onclick="toggleMenu(this)"></button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Today's Stats Card -->
+            <div class="stats-card">
+                <h2 class="section-title" style="margin-bottom: 16px;">통계</h2>
+                <div class="stat-row">
+                    <span class="stat-label">오늘 조회수</span>
+                    <span class="stat-value">128회</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">이번 주 조회수</span>
+                    <span class="stat-value">892회</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">등록일</span>
+                    <span class="stat-value">2026-03-21</span>
+                </div>
+            </div>
+
+            <!-- Notice Section -->
+            <div class="notice-section">
+                <strong>※ 중요 안내</strong>
+                <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
+                <div class="contact-info">문의: trendesert@gmail.com</div>
+            </div>
+        </div>
+
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHLjmS_uPeuD5FFSCnmH2UwqVmWgCyZgY",
+            authDomain: "buttertteokmaps.firebaseapp.com",
+            projectId: "buttertteokmaps",
+            storageBucket: "buttertteokmaps.firebasestorage.app",
+            messagingSenderId: "865189221098",
+            appId: "1:865189221098:web:20f0621f7208a5c2513d93",
+            measurementId: "G-W23877W9WX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
         let currentStatus = 'available';
+        let isGuestMode = false;
+
+        // Check if user is in guest mode
+        function checkGuestMode() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('guest') === 'true';
+        }
+
+        // Update user profile display
+        function updateUserProfile(user) {
+            const userProfileEl = document.getElementById('userProfile');
+            const profilePhotoEl = document.getElementById('profilePhoto');
+            const userNameEl = document.getElementById('userName');
+
+            if (user) {
+                // User is logged in
+                userNameEl.textContent = user.displayName || user.email || '사용자';
+
+                if (user.photoURL) {
+                    profilePhotoEl.innerHTML = `<img src="${user.photoURL}" alt="프로필">`;
+                } else {
+                    const initials = (user.displayName || user.email || 'U').charAt(0).toUpperCase();
+                    profilePhotoEl.textContent = initials;
+                }
+
+                document.getElementById('guestModeAlert').style.display = 'none';
+            } else if (isGuestMode) {
+                // Guest mode
+                userNameEl.textContent = '체험 모드';
+                profilePhotoEl.textContent = '👤';
+                document.getElementById('guestModeAlert').style.display = 'block';
+            }
+        }
+
+        // Handle logout
+        function handleLogout() {
+            if (confirm('로그아웃하시겠습니까?')) {
+                firebase.auth().signOut().then(() => {
+                    window.location.href = 'owner.html';
+                }).catch(error => {
+                    console.error('로그아웃 오류:', error);
+                    window.location.href = 'owner.html';
+                });
+            }
+        }
+
+        // Initialize authentication state
+        function initializeAuth() {
+            isGuestMode = checkGuestMode();
+            const authLoading = document.getElementById('authLoading');
+            const mainContent = document.getElementById('mainContent');
+
+            // Show loading
+            authLoading.style.display = 'flex';
+            mainContent.style.display = 'none';
+
+            // Listen for auth state changes
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is logged in
+                    updateUserProfile(user);
+                    authLoading.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    initializeDashboard();
+                } else if (isGuestMode) {
+                    // Guest mode allowed
+                    updateUserProfile(null);
+                    authLoading.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    initializeDashboard();
+                } else {
+                    // Not logged in and not guest mode - redirect to owner.html
+                    window.location.href = 'owner.html';
+                }
+            });
+        }
 
         // Initialize from localStorage
         function initializeDashboard() {
@@ -639,21 +845,20 @@
             }, 2500);
         }
 
-        function logout() {
-            if (confirm('로그아웃하시겠습니까?')) {
-                window.location.href = 'index.html';
-            }
-        }
-
         // Handle Enter key on stock input
-        document.getElementById('stockInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                updateStock();
+        document.addEventListener('DOMContentLoaded', function() {
+            const stockInput = document.getElementById('stockInput');
+            if (stockInput) {
+                stockInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        updateStock();
+                    }
+                });
             }
-        });
 
-        // Initialize dashboard on page load
-        window.addEventListener('DOMContentLoaded', initializeDashboard);
+            // Initialize auth on page load
+            initializeAuth();
+        });
     </script>
 </body>
 </html>
