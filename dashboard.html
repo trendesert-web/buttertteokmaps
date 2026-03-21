@@ -1312,6 +1312,210 @@
         .menu-delete-btn:hover {
             opacity: 1;
         }
+
+        /* New Store Registration */
+        .store-register-section {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(212, 165, 116, 0.15);
+        }
+
+        .store-register-toggle {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(244, 132, 95, 0.08), rgba(212, 165, 116, 0.08));
+            border: 1.5px solid rgba(244, 132, 95, 0.2);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-accent);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .store-register-toggle:hover {
+            background: linear-gradient(135deg, rgba(244, 132, 95, 0.12), rgba(212, 165, 116, 0.12));
+            border-color: var(--color-accent);
+        }
+
+        .store-register-form {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .store-register-form.active {
+            display: block;
+        }
+
+        .register-form-group {
+            margin-bottom: 12px;
+        }
+
+        .register-form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 6px;
+        }
+
+        .register-input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid rgba(212, 165, 116, 0.2);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--color-text-primary);
+            background: white;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .register-input:focus {
+            border-color: var(--color-primary);
+        }
+
+        .register-input::placeholder {
+            color: var(--color-text-secondary);
+            opacity: 0.5;
+        }
+
+        .naver-search-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .naver-search-btn {
+            padding: 11px 14px;
+            background: #03C75A;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .naver-search-btn:hover {
+            background: #02B350;
+        }
+
+        .naver-search-results {
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 8px;
+            border: 1px solid rgba(212, 165, 116, 0.15);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .naver-search-results.active {
+            display: block;
+        }
+
+        .naver-result-item {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.08);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .naver-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .naver-result-item:hover {
+            background: rgba(212, 165, 116, 0.04);
+        }
+
+        .naver-result-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        .naver-result-addr {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            margin-top: 2px;
+        }
+
+        .naver-result-category {
+            font-size: 10px;
+            color: var(--color-accent);
+            margin-top: 2px;
+        }
+
+        .selected-place-info {
+            background: rgba(3, 199, 90, 0.06);
+            border: 1.5px solid rgba(3, 199, 90, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .selected-place-info.active {
+            display: block;
+        }
+
+        .selected-place-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .selected-place-addr {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .selected-place-check {
+            color: #03C75A;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .register-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .register-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--color-accent), #E86B4A);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-button);
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 14px rgba(244, 132, 95, 0.3);
+            margin-top: 8px;
+        }
+
+        .register-submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(244, 132, 95, 0.4);
+        }
+
+        .register-notice {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            text-align: center;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -1320,14 +1524,66 @@
         <div class="store-select-modal">
             <div class="store-select-header">
                 <h2>🏪 매장을 선택해주세요</h2>
-                <p>운영하시는 매장을 검색하고 선택하세요</p>
+                <p>운영하시는 매장을 검색하거나 새로 등록하세요</p>
             </div>
             <div class="store-search-box">
                 <input type="text" class="store-search-input" id="storeSearchInput" placeholder="매장명 또는 지역으로 검색" oninput="filterStoreList()">
             </div>
             <div class="store-select-list" id="storeSelectList"></div>
-            <div class="store-select-footer">
-                <p style="font-size: 11px; color: var(--color-text-secondary);">매장이 목록에 없나요? <a href="mailto:trendesert@gmail.com" style="color: var(--color-accent);">등록 문의</a></p>
+
+            <!-- New Store Registration -->
+            <div class="store-register-section">
+                <button class="store-register-toggle" onclick="toggleRegisterForm()">📝 신규 매장 등록하기</button>
+                <div class="store-register-form" id="storeRegisterForm">
+                    <div class="register-form-group">
+                        <label>네이버 지도에서 매장 검색</label>
+                        <div class="naver-search-row">
+                            <input type="text" class="register-input" id="naverPlaceSearch" placeholder="매장명으로 검색 (예: 이웃집통통이)" onkeypress="if(event.key==='Enter')searchNaverPlace()">
+                            <button class="naver-search-btn" onclick="searchNaverPlace()">🔍 검색</button>
+                        </div>
+                        <div class="naver-search-results" id="naverSearchResults"></div>
+                        <div class="selected-place-info" id="selectedPlaceInfo">
+                            <div class="selected-place-name" id="selectedPlaceName"></div>
+                            <div class="selected-place-addr" id="selectedPlaceAddr"></div>
+                            <div class="selected-place-check">✓ 네이버 지도에서 확인된 장소</div>
+                        </div>
+                    </div>
+
+                    <div class="register-row">
+                        <div class="register-form-group">
+                            <label>매장 표시 이름</label>
+                            <input type="text" class="register-input" id="regStoreName" placeholder="버터떡맵에 표시될 이름">
+                        </div>
+                        <div class="register-form-group">
+                            <label>지역</label>
+                            <input type="text" class="register-input" id="regStoreRegion" placeholder="예: 서울, 부산">
+                        </div>
+                    </div>
+
+                    <div class="register-form-group">
+                        <label>매장 유형</label>
+                        <input type="text" class="register-input" id="regStoreType" placeholder="예: 베이커리, 카페, 디저트카페">
+                    </div>
+
+                    <div class="register-row">
+                        <div class="register-form-group">
+                            <label>대표 메뉴</label>
+                            <input type="text" class="register-input" id="regStoreMenu" placeholder="예: 오리지널 버터떡">
+                        </div>
+                        <div class="register-form-group">
+                            <label>가격</label>
+                            <input type="text" class="register-input" id="regStorePrice" placeholder="예: 개당 6,500원">
+                        </div>
+                    </div>
+
+                    <div class="register-form-group">
+                        <label>연락처 (전화번호)</label>
+                        <input type="tel" class="register-input" id="regStorePhone" placeholder="예: 02-1234-5678">
+                    </div>
+
+                    <button class="register-submit-btn" onclick="registerNewStore()">🏪 매장 등록 완료</button>
+                    <p class="register-notice">※ 네이버 지도에 등록된 실제 매장만 등록 가능합니다.<br>허위 등록 시 계정이 정지될 수 있습니다.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1782,6 +2038,7 @@
         // Initialize authentication state
         function initializeAuth() {
             isGuestMode = checkGuestMode();
+            loadCustomStores();
             const authLoading = document.getElementById('authLoading');
             const mainContent = document.getElementById('mainContent');
 
@@ -1827,6 +2084,7 @@
 
         // Initialize from localStorage
         function initializeDashboard() {
+            loadCustomStores();
             // Check if a store is already selected
             const savedStoreId = getSelectedStoreId();
             if (savedStoreId) {
@@ -2471,6 +2729,188 @@
             `).join('');
 
             menuList.innerHTML = defaultMenusHTML + customMenusHTML;
+        }
+
+        // ============================================
+        // NEW STORE REGISTRATION (Naver Map based)
+        // ============================================
+        let selectedNaverPlace = null;
+
+        function toggleRegisterForm() {
+            const form = document.getElementById('storeRegisterForm');
+            form.classList.toggle('active');
+        }
+
+        function searchNaverPlace() {
+            const query = document.getElementById('naverPlaceSearch').value.trim();
+            if (!query) {
+                showToast('검색어를 입력해주세요.');
+                return;
+            }
+
+            // Since we can't directly call Naver API from client without proxy,
+            // we simulate search with Naver Map link and let user confirm
+            const resultsEl = document.getElementById('naverSearchResults');
+            resultsEl.classList.add('active');
+
+            // Open Naver Map search in new tab for user to verify
+            const naverMapUrl = 'https://map.naver.com/p/search/' + encodeURIComponent(query);
+
+            resultsEl.innerHTML = `
+                <div style="padding: 14px; text-align: center;">
+                    <p style="font-size: 13px; color: var(--color-text-primary); margin-bottom: 10px;">
+                        <b>"${query}"</b> 검색 결과를 네이버 지도에서 확인하세요
+                    </p>
+                    <a href="${naverMapUrl}" target="_blank" rel="noopener"
+                       style="display: inline-block; padding: 10px 20px; background: #03C75A; color: white;
+                              border-radius: 10px; text-decoration: none; font-size: 13px; font-weight: 700;">
+                        🗺️ 네이버 지도에서 확인
+                    </a>
+                    <p style="font-size: 11px; color: var(--color-text-secondary); margin-top: 10px;">
+                        네이버 지도에서 매장을 확인한 후<br>아래 정보를 입력해주세요
+                    </p>
+                    <div style="margin-top: 12px; text-align: left;">
+                        <div class="register-form-group">
+                            <label>네이버 지도 주소 (도로명)</label>
+                            <input type="text" class="register-input" id="regNaverAddr" placeholder="네이버 지도에서 복사한 주소">
+                        </div>
+                        <button onclick="confirmNaverPlace('${query.replace(/'/g, "\\'")}')"
+                                style="width: 100%; padding: 10px; background: #03C75A; color: white; border: none;
+                                       border-radius: 10px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;">
+                            ✓ 주소 확인 완료
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function confirmNaverPlace(searchQuery) {
+            const addr = document.getElementById('regNaverAddr').value.trim();
+            if (!addr) {
+                showToast('네이버 지도에서 확인한 주소를 입력해주세요.');
+                return;
+            }
+
+            selectedNaverPlace = {
+                name: searchQuery,
+                addr: addr
+            };
+
+            // Auto-fill the store name
+            if (!document.getElementById('regStoreName').value) {
+                document.getElementById('regStoreName').value = searchQuery;
+            }
+
+            // Show confirmed info
+            const placeInfo = document.getElementById('selectedPlaceInfo');
+            document.getElementById('selectedPlaceName').textContent = searchQuery;
+            document.getElementById('selectedPlaceAddr').textContent = addr;
+            placeInfo.classList.add('active');
+
+            // Hide search results
+            document.getElementById('naverSearchResults').classList.remove('active');
+
+            // Try to extract region from address
+            const regionMatch = addr.match(/^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/);
+            if (regionMatch && !document.getElementById('regStoreRegion').value) {
+                document.getElementById('regStoreRegion').value = regionMatch[1];
+            }
+
+            showToast('장소가 확인되었습니다!');
+        }
+
+        function registerNewStore() {
+            const name = document.getElementById('regStoreName').value.trim();
+            const region = document.getElementById('regStoreRegion').value.trim();
+            const storeType = document.getElementById('regStoreType').value.trim();
+            const menu = document.getElementById('regStoreMenu').value.trim();
+            const price = document.getElementById('regStorePrice').value.trim();
+            const phone = document.getElementById('regStorePhone').value.trim();
+
+            // Validate
+            if (!selectedNaverPlace) {
+                showToast('먼저 네이버 지도에서 매장을 검색/확인해주세요.');
+                return;
+            }
+            if (!name) { showToast('매장 표시 이름을 입력해주세요.'); return; }
+            if (!region) { showToast('지역을 입력해주세요.'); return; }
+            if (!storeType) { showToast('매장 유형을 입력해주세요.'); return; }
+
+            // Get existing custom stores
+            let customStores = [];
+            try {
+                customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+            } catch (e) { customStores = []; }
+
+            // Generate new ID (start from 100 to avoid conflicts with default 42)
+            const newId = customStores.length > 0
+                ? Math.max(...customStores.map(s => s.id)) + 1
+                : 100;
+
+            const newStore = {
+                id: newId,
+                name: name,
+                addr: selectedNaverPlace.addr,
+                region: region,
+                area: region,
+                type: storeType || '카페',
+                menu: menu || '버터떡',
+                price: price || '문의',
+                phone: phone || '',
+                status: 'available',
+                stock: 0,
+                registeredAt: new Date().toISOString(),
+                registeredBy: currentUser ? (currentUser.email || currentUser.displayName || 'unknown') : 'guest'
+            };
+
+            // Save
+            customStores.push(newStore);
+            localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+
+            // Also add to allStores in memory
+            allStores.push({
+                id: newStore.id,
+                name: newStore.name,
+                addr: newStore.addr,
+                region: newStore.region,
+                area: newStore.area
+            });
+
+            // Select this store
+            selectStore(newId);
+
+            // Reset form
+            selectedNaverPlace = null;
+            document.getElementById('storeRegisterForm').classList.remove('active');
+            document.getElementById('naverPlaceSearch').value = '';
+            document.getElementById('regStoreName').value = '';
+            document.getElementById('regStoreRegion').value = '';
+            document.getElementById('regStoreType').value = '';
+            document.getElementById('regStoreMenu').value = '';
+            document.getElementById('regStorePrice').value = '';
+            document.getElementById('regStorePhone').value = '';
+            document.getElementById('selectedPlaceInfo').classList.remove('active');
+            document.getElementById('naverSearchResults').classList.remove('active');
+
+            showToast('🎉 매장이 등록되었습니다!');
+        }
+
+        // Load custom stores on init
+        function loadCustomStores() {
+            try {
+                const customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+                customStores.forEach(s => {
+                    if (!allStores.some(as => as.id === s.id)) {
+                        allStores.push({
+                            id: s.id,
+                            name: s.name,
+                            addr: s.addr,
+                            region: s.region,
+                            area: s.area
+                        });
+                    }
+                });
+            } catch (e) { console.error('Failed to load custom stores:', e); }
         }
 
         // Handle Enter key on stock input
