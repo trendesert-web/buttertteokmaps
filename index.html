@@ -1352,6 +1352,36 @@
       }
     });
 
+    // 재고 데이터를 모든 매장의 store.stock에 반영
+    stores.forEach(function(s) {
+      // Supabase 재고 우선
+      if (supabaseStocks[s.id]) {
+        var sc = supabaseStocks[s.id].stock_count || supabaseStocks[s.id].quantity || 0;
+        s.stock = sc;
+        s.status = sc > 0 ? 'available' : 'soldout';
+      }
+      // localStorage 재고 확인 (커스텀 매장)
+      var localStock = localStorage.getItem('buttertteokmapStock_' + s.id);
+      if (localStock !== null) {
+        var ls = parseInt(localStock);
+        if (!isNaN(ls)) {
+          s.stock = ls;
+          s.status = ls > 0 ? 'available' : 'soldout';
+        }
+      }
+      // 마커 아이콘 업데이트
+      if (markers[s.id] && map) {
+        var isCustom = s.isFromLocal || s.isFromSupabase;
+        var color = s.status === 'available' ? '#6BAF7B' : s.status === 'low' ? '#E8B84B' : '#E85D5D';
+        markers[s.id].setIcon({
+          content: isCustom ? createCustomMarkerIcon(s.stock, s.name) : createMarkerIcon(s.stock, color),
+          size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+          scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+          anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
+        });
+      }
+    });
+
     console.log(`Supabase에서 ${newStores.length}개의 새로운 매장 로드됨. 총 ${stores.length}개 매장 표시`);
 
     // 새로 추가된 매장들의 마커를 지도에 그리기
@@ -1894,18 +1924,32 @@
     let statusLabel = store.status === "available" ? "✓ 재고 충분" : store.status === "low" ? "⚠ 품절 임박" : "✕ 품절";
 
     // Check if there's Supabase stock data for this store
-    if (store.isFromSupabase && supabaseStocks[store.id]) {
+    if (supabaseStocks[store.id]) {
       const stockData = supabaseStocks[store.id];
-      if (stockData.quantity > 0) {
+      var stockCount = stockData.stock_count || stockData.quantity || 0;
+      if (stockCount > 0) {
         statusClass = "available";
-        statusLabel = "재고 있음 ✅";
+        statusLabel = "재고 " + stockCount + "개 ✅";
       } else {
         statusClass = "soldout";
         statusLabel = "품절 ❌";
       }
-    } else if (store.isFromSupabase) {
-      statusLabel = "정보 없음";
-      statusClass = "available";
+    } else if (store.isFromLocal || store.isFromSupabase) {
+      // localStorage 재고 확인
+      var localStock = localStorage.getItem('buttertteokmapStock_' + store.id);
+      if (localStock !== null) {
+        var ls = parseInt(localStock);
+        if (ls > 0) {
+          statusClass = "available";
+          statusLabel = "재고 " + ls + "개 ✅";
+        } else {
+          statusClass = "soldout";
+          statusLabel = "품절 ❌";
+        }
+      } else {
+        statusLabel = "정보 없음";
+        statusClass = "available";
+      }
     }
 
     document.getElementById("sheetIcon").className = `sheet-icon ${statusClass}`;
