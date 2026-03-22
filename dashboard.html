@@ -2158,10 +2158,9 @@
         </div>
     </div>
 
-    <!-- Kakao Maps SDK for Place Search -->
-    <!-- 네이버 Geocoder (주소→좌표 변환) -->
+    <!-- Naver Maps + Geocoder -->
     <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304&submodules=geocoder"></script>
-    <!-- Daum Postcode (주소 검색 - API키 불필요, 100% 작동) -->
+    <!-- Daum Postcode (주소 검색) -->
     <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
     <!-- Firebase SDK -->
@@ -3823,33 +3822,32 @@
             }
         }
 
-        // 주소 → 좌표 변환 (카카오 Geocoder)
+        // 주소 → 좌표 변환 (네이버 Geocoding API)
         function geocodeAddress(address) {
             return new Promise(function(resolve) {
-                try {
-                    if (typeof naver !== 'undefined' && naver.maps && naver.maps.Service) {
-                        naver.maps.Service.geocode({ query: address }, function(status, response) {
-                            if (status === naver.maps.Service.Status.OK) {
-                                var items = response.v2.addresses;
-                                if (items && items.length > 0) {
-                                    var lat = parseFloat(items[0].y);
-                                    var lng = parseFloat(items[0].x);
-                                    console.log('[지오코딩] 네이버 성공:', address, '→', lat, lng);
-                                    resolve({ lat: lat, lng: lng });
-                                    return;
-                                }
-                            }
-                            console.warn('[지오코딩] 네이버 결과없음:', address);
-                            resolve(null);
-                        });
+                if (typeof naver === 'undefined' || !naver.maps.Service) {
+                    console.warn('[지오코딩] 네이버 Geocoder 미로딩');
+                    resolve(null);
+                    return;
+                }
+                naver.maps.Service.geocode({ query: address }, function(status, response) {
+                    if (status !== naver.maps.Service.Status.OK) {
+                        console.warn('[지오코딩] 실패:', address, status);
+                        resolve(null);
+                        return;
+                    }
+                    var result = response.v2;
+                    if (result && result.addresses && result.addresses.length > 0) {
+                        var item = result.addresses[0];
+                        var lat = parseFloat(item.y);
+                        var lng = parseFloat(item.x);
+                        console.log('[지오코딩] 성공:', address, '→', lat, lng);
+                        resolve({ lat: lat, lng: lng });
                     } else {
-                        console.warn('[지오코딩] 네이버 Geocoder 미로드');
+                        console.warn('[지오코딩] 결과없음:', address);
                         resolve(null);
                     }
-                } catch(e) {
-                    console.error('[지오코딩] 에러:', e);
-                    resolve(null);
-                }
+                });
             });
         }
 

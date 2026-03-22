@@ -1469,39 +1469,53 @@
     return Math.abs(lat - rc.lat) < 0.02 && Math.abs(lng - rc.lng) < 0.02;
   }
 
-  // 네이버 Geocoder로 커스텀 매장 좌표 자동 보정 (이미 로드된 API 사용)
+  // 네이버 Geocoding API로 주소 → 좌표 변환
+  function naverGeocode(address, callback) {
+    if (typeof naver === 'undefined' || !naver.maps.Service) {
+      console.warn('[지오코딩] 네이버 Geocoder 미로딩');
+      callback(null);
+      return;
+    }
+    naver.maps.Service.geocode({ query: address }, function(status, response) {
+      if (status !== naver.maps.Service.Status.OK) {
+        console.warn('[지오코딩] 실패:', address, status);
+        callback(null);
+        return;
+      }
+      var result = response.v2;
+      if (result && result.addresses && result.addresses.length > 0) {
+        var item = result.addresses[0];
+        var lat = parseFloat(item.y);
+        var lng = parseFloat(item.x);
+        console.log('[지오코딩] 성공:', address, '→', lat, lng);
+        callback({ lat: lat, lng: lng });
+      } else {
+        console.warn('[지오코딩] 결과없음:', address);
+        callback(null);
+      }
+    });
+  }
+
+  // 커스텀 매장 좌표 보정 (네이버 Geocoding)
   function geocodeCustomStores() {
     var storesNeedingGeocode = stores.filter(function(s) { return s.needsGeocode && s.addr; });
     if (storesNeedingGeocode.length === 0) return;
-    if (typeof naver === 'undefined' || !naver.maps || !naver.maps.Service) {
-      console.warn('[지오코딩] 네이버 Geocoder 미로드');
-      return;
-    }
 
-    console.log('[지오코딩] ' + storesNeedingGeocode.length + '개 매장 좌표 보정 시작');
+    console.log('[지오코딩] ' + storesNeedingGeocode.length + '개 매장 좌표 보정 시작 (네이버 Geocoding)');
     var updated = false;
     var pending = storesNeedingGeocode.length;
 
-    storesNeedingGeocode.forEach(function(store) {
-      naver.maps.Service.geocode({ query: store.addr }, function(status, response) {
-        if (status === naver.maps.Service.Status.OK) {
-          var items = response.v2.addresses;
-          if (items && items.length > 0) {
-            var newLat = parseFloat(items[0].y);
-            var newLng = parseFloat(items[0].x);
-            if (!isNaN(newLat) && !isNaN(newLng)) {
-              applyGeocode(store, newLat, newLng);
-              updated = true;
-            }
-          } else {
-            console.warn('[지오코딩] 결과없음:', store.name, store.addr);
+    storesNeedingGeocode.forEach(function(store, idx) {
+      setTimeout(function() {
+        naverGeocode(store.addr, function(coords) {
+          if (coords) {
+            applyGeocode(store, coords.lat, coords.lng);
+            updated = true;
           }
-        } else {
-          console.warn('[지오코딩] 실패:', store.name, status);
-        }
-        pending--;
-        if (pending <= 0 && updated) saveGeocodedStores();
-      });
+          pending--;
+          if (pending <= 0 && updated) saveGeocodedStores();
+        });
+      }, idx * 300);
     });
   }
 
