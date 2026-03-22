@@ -898,7 +898,7 @@
             }
         }
     </style>
-    <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- LOGIN SCREEN -->
@@ -942,9 +942,9 @@
         <nav class="navbar">
             <div class="navbar-brand">🧈 버터떡맵 관리자</div>
             <div class="navbar-tabs">
-                <button class="navbar-tab active" onclick="switchTab('stores')">매장 관리</button>
-                <button class="navbar-tab" onclick="switchTab('sanctions')">유저 제재</button>
-                <button class="navbar-tab" onclick="switchTab('stats')">통계</button>
+                <button class="navbar-tab active" onclick="switchTab('stores', event)">매장 관리</button>
+                <button class="navbar-tab" onclick="switchTab('sanctions', event)">유저 제재</button>
+                <button class="navbar-tab" onclick="switchTab('stats', event)">통계</button>
             </div>
             <button class="navbar-logout" onclick="handleLogout()">로그아웃</button>
         </nav>
@@ -1230,16 +1230,27 @@
             document.getElementById(id).classList.remove('active');
         }
 
-        async function switchTab(tabName) {
+        async function switchTab(tabName, evt) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.navbar-tab').forEach(btn => btn.classList.remove('active'));
 
             // Show selected tab
             document.getElementById(tabName + 'Tab').classList.add('active');
-            if (event && event.target) {
-                var btn = event.target.closest('.navbar-tab') || event.target;
-                btn.classList.add('active');
+
+            // Highlight active button - try passed event first, then fall back to finding by tab name
+            if (evt && evt.target) {
+                var btn = evt.target.closest('.navbar-tab') || evt.target;
+                if (btn && btn.classList) btn.classList.add('active');
+            } else {
+                // Fallback: find and highlight the button with matching onclick
+                var buttons = document.querySelectorAll('.navbar-tab');
+                for (var i = 0; i < buttons.length; i++) {
+                    if (buttons[i].textContent && buttons[i].getAttribute('onclick') && buttons[i].getAttribute('onclick').includes(tabName)) {
+                        buttons[i].classList.add('active');
+                        break;
+                    }
+                }
             }
 
             // Load tab data
