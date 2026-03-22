@@ -1297,8 +1297,8 @@
       }
     });
 
-    // Filter stores that have valid lat/lng
-    const newStores = supabaseStores.filter(s => s.lat && s.lng && s.lat > 0 && s.lng > 0);
+    // Filter stores that are not banned and don't already exist in hardcoded stores
+    const newStores = supabaseStores.filter(s => !stores.some(h => h.id === s.id));
 
     // Merge with existing stores (keep hardcoded stores, add new ones from Supabase)
     newStores.forEach(supabaseStore => {
@@ -1382,6 +1382,12 @@
 
   function addAllMarkers() {
     stores.forEach(store => {
+      // Skip stores without valid coordinates
+      if (!store.lat || !store.lng || isNaN(store.lat) || isNaN(store.lng)) {
+        console.warn('Store has no valid coordinates:', store.name);
+        return;
+      }
+
       const color = store.status === "available" ? "#6BAF7B" : store.status === "low" ? "#E8B84B" : "#E85D5D";
       const marker = new naver.maps.Marker({
         position: new naver.maps.LatLng(store.lat, store.lng),

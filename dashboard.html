@@ -2079,6 +2079,27 @@
 
         let selectedStoreId = null;
 
+        // Region to coordinates mapping for stores without explicit lat/lng
+        const regionCoords = {
+            '서울': {lat: 37.5665, lng: 126.9780},
+            '경기': {lat: 37.2636, lng: 127.0286},
+            '부산': {lat: 35.1796, lng: 129.0756},
+            '대구': {lat: 35.8714, lng: 128.6014},
+            '인천': {lat: 37.4563, lng: 126.7052},
+            '광주': {lat: 35.1595, lng: 126.8526},
+            '대전': {lat: 36.3504, lng: 127.3845},
+            '울산': {lat: 35.5384, lng: 129.3114},
+            '전북': {lat: 35.8242, lng: 127.1480},
+            '제주': {lat: 33.4996, lng: 126.5312},
+            '강원': {lat: 37.8228, lng: 128.1555},
+            '충북': {lat: 36.6357, lng: 127.4913},
+            '충남': {lat: 36.6588, lng: 126.6728},
+            '전남': {lat: 34.8161, lng: 126.4629},
+            '경북': {lat: 36.4919, lng: 128.8889},
+            '경남': {lat: 35.4606, lng: 128.2132},
+            '세종': {lat: 36.4800, lng: 127.2612}
+        };
+
         // XSS prevention - HTML escape helper
         function escapeHtml(str) {
             if (!str) return '';
@@ -3660,6 +3681,17 @@
                 ? Math.max(...customStores.map(s => s.id)) + 1
                 : 100;
 
+            // Get coordinates from Naver Place or use region default
+            let storeLat = (selectedNaverPlace && selectedNaverPlace.lat) || null;
+            let storeLng = (selectedNaverPlace && selectedNaverPlace.lng) || null;
+
+            // If no explicit coordinates, use region default with small random offset to avoid marker stacking
+            if (!storeLat || !storeLng) {
+                const regionCoord = regionCoords[region] || {lat: 37.5665, lng: 126.9780};
+                storeLat = regionCoord.lat + (Math.random() - 0.5) * 0.02;
+                storeLng = regionCoord.lng + (Math.random() - 0.5) * 0.02;
+            }
+
             const newStore = {
                 id: newId,
                 kakaoId: (selectedNaverPlace && selectedNaverPlace.kakaoId) || null,
@@ -3671,8 +3703,8 @@
                 menu: menu || '버터떡',
                 price: price || '문의',
                 phone: phone || '',
-                lat: (selectedNaverPlace && selectedNaverPlace.lat) || null,
-                lng: (selectedNaverPlace && selectedNaverPlace.lng) || null,
+                lat: storeLat,
+                lng: storeLng,
                 placeUrl: (selectedNaverPlace && selectedNaverPlace.placeUrl) || null,
                 status: 'available',
                 stock: 0,
@@ -3692,14 +3724,14 @@
                     menu: menu || '버터떡',
                     price: price || '문의',
                     phone: phone || '',
-                    lat: (selectedNaverPlace && selectedNaverPlace.lat) || null,
-                    lng: (selectedNaverPlace && selectedNaverPlace.lng) || null,
+                    lat: storeLat,
+                    lng: storeLng,
                     password_hash: btoa(password),
                     is_default: false,
                     is_banned: false
                 }).select().single();
                 if (error) throw error;
-                console.log('Store saved to Supabase');
+                console.log('Store saved to Supabase with lat:', storeLat, 'lng:', storeLng);
             } catch(e) {
                 console.warn('Failed to save store to Supabase:', e);
             }

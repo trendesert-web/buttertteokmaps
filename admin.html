@@ -1250,33 +1250,51 @@
 
         // ===== AUTHENTICATION =====
         async function initializeAuth() {
-            if (!supabase) return undefined;
-            try {
-                const { data, error } = await supabase.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
+            // Check localStorage FIRST (primary method, no Supabase dependency)
+            let hasPassword = localStorage.getItem('buttertteokmapAdminPass');
 
-                if (!error && data) {
-                    document.getElementById('setupMode').style.display = 'none';
-                    document.getElementById('loginMode').style.display = 'block';
-                } else {
-                    document.getElementById('setupMode').style.display = 'block';
-                    document.getElementById('loginMode').style.display = 'none';
+            // If no password exists anywhere, set the default password
+            if (!hasPassword) {
+                const defaultPassword = 'butter1234';
+                const encodedPassword = btoa(defaultPassword);
+                localStorage.setItem('buttertteokmapAdminPass', encodedPassword);
+                hasPassword = encodedPassword;
+
+                // Show setup mode with default password hint
+                document.getElementById('setupMode').style.display = 'block';
+                document.getElementById('loginMode').style.display = 'none';
+
+                // Show hint about default password
+                const setupHint = document.querySelector('.setup-hint');
+                if (setupHint) {
+                    setupHint.innerHTML = '🔑 첫 로그인입니다. 기본 비밀번호: <strong>butter1234</strong><br>새 비밀번호를 설정해주세요.';
                 }
-            } catch (e) {
-                console.warn('Supabase 비밀번호 확인 실패, 로컬스토리지 사용:', e);
-                // Fallback to localStorage
-                const hasPassword = localStorage.getItem('buttertteokmapAdminPass');
-                if (!hasPassword) {
-                    document.getElementById('setupMode').style.display = 'block';
-                    document.getElementById('loginMode').style.display = 'none';
-                } else {
-                    document.getElementById('setupMode').style.display = 'none';
-                    document.getElementById('loginMode').style.display = 'block';
+
+                // Auto-fill the setup password fields with the default
+                document.getElementById('setupPass1').value = defaultPassword;
+                document.getElementById('setupPass2').value = defaultPassword;
+            } else {
+                // Password already exists, show login mode
+                document.getElementById('setupMode').style.display = 'none';
+                document.getElementById('loginMode').style.display = 'block';
+            }
+
+            // Also try to sync with Supabase in the background (non-blocking)
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
+                    if (!error && data && !hasPassword) {
+                        // Supabase has password but localStorage doesn't - sync it
+                        localStorage.setItem('buttertteokmapAdminPass', data.setting_value);
+                    }
+                } catch (e) {
+                    // Supabase not available, that's fine - we're using localStorage
+                    console.log('Supabase 비밀번호 확인 불가 (정상, localStorage 사용 중)');
                 }
             }
         }
 
         async function handleSetupPassword() {
-            if (!supabase) return undefined;
             const pass1 = document.getElementById('setupPass1').value;
             const pass2 = document.getElementById('setupPass2').value;
 
@@ -1295,28 +1313,29 @@
                 return;
             }
 
-            try {
-                const { error } = await supabase.from('admin_settings').upsert(
-                    { setting_key: 'admin_password', setting_value: btoa(pass1) },
-                    { onConflict: 'setting_key' }
-                );
-                if (error) throw error;
+            // SAVE TO localStorage FIRST (primary method)
+            const encodedPassword = btoa(pass1);
+            localStorage.setItem('buttertteokmapAdminPass', encodedPassword);
 
-                isAdminLoggedIn = true;
-                showLoginSuccess();
-                showToast('관리자 비밀번호가 설정되었습니다.', 'success');
-            } catch (e) {
-                console.warn('Supabase 저장 실패, 로컬스토리지 사용:', e);
-                // Fallback to localStorage
-                localStorage.setItem('buttertteokmapAdminPass', btoa(pass1));
-                isAdminLoggedIn = true;
-                showLoginSuccess();
-                showToast('관리자 비밀번호가 설정되었습니다.', 'success');
+            // Then try to save to Supabase in background (non-blocking)
+            if (supabase) {
+                try {
+                    await supabase.from('admin_settings').upsert(
+                        { setting_key: 'admin_password', setting_value: encodedPassword },
+                        { onConflict: 'setting_key' }
+                    );
+                    console.log('비밀번호가 Supabase에 저장되었습니다.');
+                } catch (e) {
+                    console.warn('Supabase 저장 실패 (localStorage에는 저장됨):', e);
+                }
             }
+
+            isAdminLoggedIn = true;
+            showLoginSuccess();
+            showToast('관리자 비밀번호가 설정되었습니다.', 'success');
         }
 
         async function handleLogin(e) {
-            if (!supabase) return undefined;
             e.preventDefault();
             const password = document.getElementById('adminPassword').value;
 
@@ -1325,29 +1344,37 @@
                 return;
             }
 
-            try {
-                const { data, error } = await supabase.from('admin_settings')
-                    .select('setting_value').eq('setting_key', 'admin_password').single();
+            // CHECK localStorage FIRST (primary method)
+            const storedPassword = localStorage.getItem('buttertteokmapAdminPass');
+            const encodedInput = btoa(password);
 
-                if (error) throw error;
-
-                if (data && btoa(password) === data.setting_value) {
-                    isAdminLoggedIn = true;
-                    showLoginSuccess();
-                } else {
-                    showError('비밀번호가 일치하지 않습니다.');
-                }
-            } catch (e) {
-                console.warn('Supabase 확인 실패, 로컬스토리지 사용:', e);
-                // Fallback to localStorage
-                const storedPassword = localStorage.getItem('buttertteokmapAdminPass');
-                if (btoa(password) !== storedPassword) {
-                    showError('비밀번호가 일치하지 않습니다.');
-                    return;
-                }
+            if (storedPassword && encodedInput === storedPassword) {
+                // localStorage password matches
                 isAdminLoggedIn = true;
                 showLoginSuccess();
+                return;
             }
+
+            // If localStorage doesn't match, try Supabase in background (non-blocking)
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('admin_settings')
+                        .select('setting_value').eq('setting_key', 'admin_password').single();
+
+                    if (!error && data && encodedInput === data.setting_value) {
+                        // Supabase password matches - sync to localStorage
+                        localStorage.setItem('buttertteokmapAdminPass', data.setting_value);
+                        isAdminLoggedIn = true;
+                        showLoginSuccess();
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Supabase 확인 불가 (정상, localStorage 사용 중)');
+                }
+            }
+
+            // No match found anywhere
+            showError('비밀번호가 일치하지 않습니다.');
         }
 
         function showError(message) {
