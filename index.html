@@ -1316,16 +1316,35 @@
   // INITIALIZATION
   // ============================================
   document.addEventListener("DOMContentLoaded", function () {
-    // Supabase 로딩에 타임아웃 설정 (5초)
-    const supabaseTimeout = new Promise((resolve) => setTimeout(resolve, 5000));
-    const supabaseLoad = mergeSupabaseStores();
+    // 최대 3초만 Supabase 대기, 실패해도 무조건 지도 로드
+    var mapInitialized = false;
 
-    Promise.race([supabaseLoad, supabaseTimeout]).then(() => {
-      setTimeout(initMap, 300);
-    }).catch((e) => {
-      console.warn('초기화 오류, 기본 데이터로 진행:', e);
-      setTimeout(initMap, 300);
-    });
+    function safeInitMap() {
+      if (mapInitialized) return;
+      mapInitialized = true;
+      try {
+        initMap();
+      } catch(e) {
+        console.error('지도 초기화 최종 오류:', e);
+        hideLoading();
+      }
+    }
+
+    // 3초 안전장치: 뭔 일이 있어도 지도 표시
+    setTimeout(safeInitMap, 3000);
+
+    // Supabase 데이터 로드 시도
+    try {
+      mergeSupabaseStores().then(function() {
+        safeInitMap();
+      }).catch(function(e) {
+        console.warn('Supabase 로드 실패:', e);
+        safeInitMap();
+      });
+    } catch(e) {
+      console.warn('mergeSupabaseStores 호출 오류:', e);
+      safeInitMap();
+    }
   });
 
   function initMap() {
@@ -1342,14 +1361,15 @@
           disableKineticPan: false,
           padding: [20, 20, 100, 20]
         });
-        addAllMarkers();
-        setupEventListeners();
+        try { addAllMarkers(); } catch(e) { console.error('마커 추가 오류:', e); }
+        try { setupEventListeners(); } catch(e) { console.error('이벤트 리스너 오류:', e); }
       } else {
+        console.warn('네이버 지도 SDK 로드 안됨, 폴백 사용');
         initFallbackMap();
       }
     } catch (e) {
       console.error("Map initialization error:", e);
-      initFallbackMap();
+      try { initFallbackMap(); } catch(e2) { console.error('폴백도 실패:', e2); }
     }
     hideLoading();
   }
