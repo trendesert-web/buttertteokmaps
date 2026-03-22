@@ -621,37 +621,96 @@
         /* Toast Notification */
         .toast {
             position: fixed;
-            top: 40px;
+            top: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(-120px);
-            background: linear-gradient(135deg, var(--color-success), rgba(107, 175, 123, 0.8));
+            transform: translateX(-50%) translateY(-150px);
+            background: linear-gradient(135deg, var(--color-success), rgba(107, 175, 123, 0.85));
             color: white;
-            padding: 14px 24px;
+            padding: 18px 28px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 14px;
-            box-shadow: 0 6px 20px rgba(107, 175, 123, 0.3);
+            font-size: 15px;
+            box-shadow: 0 10px 30px rgba(107, 175, 123, 0.4);
             z-index: 9999;
-            animation: slideDownToast 0.4s ease-out;
+            animation: slideDownToast 0.4s ease-out forwards;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            max-width: 380px;
+            min-width: 280px;
+            backdrop-filter: blur(8px);
         }
 
         .toast::before {
-            content: '✓';
-            font-size: 16px;
-            font-weight: 700;
+            content: '✅';
+            font-size: 20px;
+            display: inline-block;
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #4CAF50, rgba(76, 175, 80, 0.85));
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .toast.success::before {
+            content: '✅';
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #F44336, rgba(244, 67, 54, 0.85));
+            box-shadow: 0 10px 30px rgba(244, 67, 54, 0.4);
+        }
+
+        .toast.error::before {
+            content: '❌';
+        }
+
+        .toast.warning {
+            background: linear-gradient(135deg, #FF9800, rgba(255, 152, 0, 0.85));
+            box-shadow: 0 10px 30px rgba(255, 152, 0, 0.4);
+        }
+
+        .toast.warning::before {
+            content: '⚠️';
+        }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        .toast-progress {
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .toast-progress-bar {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            animation: toastProgressBar 3s linear forwards;
         }
 
         @keyframes slideDownToast {
             from {
-                transform: translateX(-50%) translateY(-120px);
+                transform: translateX(-50%) translateY(-150px);
                 opacity: 0;
             }
             to {
                 transform: translateX(-50%) translateY(0);
                 opacity: 1;
+            }
+        }
+
+        @keyframes toastProgressBar {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
             }
         }
 
@@ -676,7 +735,7 @@
                 opacity: 1;
             }
             to {
-                transform: translateX(-50%) translateY(-120px);
+                transform: translateX(-50%) translateY(-150px);
                 opacity: 0;
             }
         }
@@ -2422,7 +2481,7 @@
             const stock = parseInt(stockVal);
 
             if (stockVal === '' || isNaN(stock) || stock < 0) {
-                showToast('재고를 올바르게 입력해주세요.');
+                showToast('재고를 올바르게 입력해주세요.', 'warning');
                 return;
             }
 
@@ -2445,7 +2504,7 @@
             localStorage.setItem('buttertteokmapLastUpdated_' + (selectedStoreId || '1'), timeString);
             updateLastUpdatedDisplay(timeString);
 
-            showToast('재고가 업데이트되었습니다!');
+            showToast('재고 ' + stock + '개로 업데이트 완료!', 'success');
         }
 
         function updateLastUpdatedDisplay(timeString) {
@@ -2456,18 +2515,44 @@
             button.classList.toggle('active');
         }
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.style.display = 'flex';
-            toast.classList.remove('hide');
+        function showToast(message, type = 'success') {
+            // Create toast container if needed
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; pointer-events: none; z-index: 9998;';
+                document.body.appendChild(toastContainer);
+            }
 
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-150px); animation: slideDownToast 0.4s ease-out forwards;';
+
+            // Build toast HTML
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'toast-message';
+            messageDiv.textContent = message;
+
+            const progressDiv = document.createElement('div');
+            progressDiv.className = 'toast-progress';
+            const progressBar = document.createElement('div');
+            progressBar.className = 'toast-progress-bar';
+            progressDiv.appendChild(progressBar);
+
+            toast.appendChild(messageDiv);
+            toast.appendChild(progressDiv);
+
+            document.body.appendChild(toast);
+
+            // Auto-dismiss after 3 seconds
             setTimeout(() => {
                 toast.classList.add('hide');
                 setTimeout(() => {
-                    toast.style.display = 'none';
+                    toast.remove();
                 }, 400);
-            }, 2500);
+            }, 3000);
         }
 
         // ============================================
@@ -2479,13 +2564,13 @@
 
             // Validate file size (5MB)
             if (file.size > 5 * 1024 * 1024) {
-                showToast('5MB 이하의 이미지만 업로드 가능합니다.');
+                showToast('5MB 이하의 이미지만 업로드 가능합니다.', 'warning');
                 return;
             }
 
             // Validate file type
             if (!file.type.startsWith('image/')) {
-                showToast('이미지 파일만 업로드 가능합니다.');
+                showToast('이미지 파일만 업로드 가능합니다.', 'warning');
                 return;
             }
 
@@ -2516,7 +2601,7 @@
 
                     const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
                     displayUploadedImage(resizedDataUrl);
-                    showToast('이미지가 업로드되었습니다!');
+                    showToast('이미지가 업로드되었습니다!', 'success');
                 };
                 img.src = e.target.result;
             };
@@ -2553,7 +2638,7 @@
 
                 // Remove from localStorage (store id 1 as demo)
                 localStorage.removeItem('buttertteokmapStoreImage_1');
-                showToast('사진이 삭제되었습니다.');
+                showToast('사진이 삭제되었습니다.', 'success');
             }
         }
 
@@ -2588,7 +2673,7 @@
                     localStorage.setItem('buttertteokmapStoreImage_' + storeId, imgEl.src);
                 } catch (e) {
                     console.warn('Image too large for localStorage:', e);
-                    showToast('이미지 용량이 너무 큽니다. 더 작은 이미지를 사용해주세요.');
+                    showToast('이미지 용량이 너무 큽니다. 더 작은 이미지를 사용해주세요.', 'error');
                     return;
                 }
             }
@@ -2599,7 +2684,7 @@
                 localStorage.removeItem('buttertteokmapStoreDesc_' + storeId);
             }
 
-            showToast('매장 정보가 저장되었습니다!');
+            showToast('매장 정보가 저장되었습니다!', 'success');
         }
 
         // Load saved store info on dashboard init
@@ -2694,18 +2779,18 @@
             const desc = document.getElementById('cpnDesc').value.trim();
 
             // Validation
-            if (!name) { showToast('쿠폰 이름을 입력해주세요.'); return; }
-            if (!value || isNaN(value) || value <= 0) { showToast('할인 값을 입력해주세요.'); return; }
-            if (couponType === 'percent' && value > 100) { showToast('할인율은 100% 이하로 설정해주세요.'); return; }
-            if (!quantity || quantity <= 0) { showToast('발행 수량을 입력해주세요.'); return; }
-            if (!code) { showToast('쿠폰 코드를 입력하거나 자동생성 해주세요.'); return; }
-            if (code.length < 4) { showToast('쿠폰 코드는 4자 이상이어야 합니다.'); return; }
-            if (!expiry) { showToast('만료일을 선택해주세요.'); return; }
+            if (!name) { showToast('쿠폰 이름을 입력해주세요.', 'warning'); return; }
+            if (!value || isNaN(value) || value <= 0) { showToast('할인 값을 입력해주세요.', 'warning'); return; }
+            if (couponType === 'percent' && value > 100) { showToast('할인율은 100% 이하로 설정해주세요.', 'warning'); return; }
+            if (!quantity || quantity <= 0) { showToast('발행 수량을 입력해주세요.', 'warning'); return; }
+            if (!code) { showToast('쿠폰 코드를 입력하거나 자동생성 해주세요.', 'warning'); return; }
+            if (code.length < 4) { showToast('쿠폰 코드는 4자 이상이어야 합니다.', 'warning'); return; }
+            if (!expiry) { showToast('만료일을 선택해주세요.', 'warning'); return; }
 
             // Check duplicate code
             const existing = getStoreCoupons();
             if (existing.some(c => c.code === code)) {
-                showToast('이미 사용 중인 쿠폰 코드입니다.');
+                showToast('이미 사용 중인 쿠폰 코드입니다.', 'warning');
                 return;
             }
 
@@ -2741,7 +2826,7 @@
             document.getElementById('cpnDesc').value = '';
 
             await renderIssuedCoupons();
-            showToast('쿠폰이 발행되었습니다! 코드: ' + code);
+            showToast('쿠폰이 발행되었습니다! 코드: ' + code, 'success');
         }
 
         async function deleteCoupon(couponId) {
@@ -2755,12 +2840,12 @@
             coupons = coupons.filter(c => c.id !== couponId);
             saveStoreCoupons(coupons);
             await renderIssuedCoupons();
-            showToast('쿠폰이 삭제되었습니다.');
+            showToast('쿠폰이 삭제되었습니다.', 'success');
         }
 
         function copyCouponCode(code) {
             navigator.clipboard.writeText(code).then(() => {
-                showToast('코드가 복사되었습니다: ' + code);
+                showToast('코드가 복사되었습니다: ' + code, 'success');
             }).catch(() => {
                 // Fallback
                 const ta = document.createElement('textarea');
@@ -2769,7 +2854,7 @@
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                showToast('코드가 복사되었습니다: ' + code);
+                showToast('코드가 복사되었습니다: ' + code, 'success');
             });
         }
 
@@ -3129,7 +3214,7 @@
             }
 
             if (btoa(pass) !== savedPass) {
-                showToast('비밀번호가 틀렸습니다.');
+                showToast('비밀번호가 틀렸습니다.', 'error');
                 input.value = '';
                 input.style.borderColor = '#F44336';
                 input.focus();
@@ -3150,14 +3235,14 @@
             hideStoreSelector();
             await applySelectedStore();
             const store = getStoreById(storeId);
-            showToast((store ? store.name : '매장') + ' 선택 완료!');
+            showToast((store ? store.name : '매장') + ' 선택 완료!', 'success');
         }
 
         // Trigger search button (force Kakao API search)
         function searchAndRegister() {
             const q = document.getElementById('storeSearchInput').value.trim();
-            if (!q) { showToast('매장명을 입력해주세요.'); return; }
-            if (q.length < 2) { showToast('2글자 이상 입력해주세요.'); return; }
+            if (!q) { showToast('매장명을 입력해주세요.', 'warning'); return; }
+            if (q.length < 2) { showToast('2글자 이상 입력해주세요.', 'warning'); return; }
 
             // Filter existing stores
             const qLower = q.toLowerCase();
@@ -3176,7 +3261,7 @@
             searchPlaces(q, function(kakaoResults) {
                 renderMixedResults(filtered, kakaoResults, q);
                 if (kakaoResults.length === 0 && filtered.length === 0) {
-                    showToast('검색 결과가 없습니다.');
+                    showToast('검색 결과가 없습니다.', 'warning');
                 }
             });
         }
@@ -3237,7 +3322,7 @@
 
             // Scroll to form
             document.getElementById('registerSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            showToast('매장 정보를 확인 후 등록해주세요!');
+            showToast('매장 정보를 확인 후 등록해주세요!', 'success');
         }
 
         async function applySelectedStore() {
@@ -3328,13 +3413,13 @@
             const input = document.getElementById('newMenuInput');
             const name = input.value.trim();
             if (!name) {
-                showToast('메뉴 이름을 입력해주세요.');
+                showToast('메뉴 이름을 입력해주세요.', 'warning');
                 return;
             }
 
             const menus = getCustomMenus();
             if (menus.some(m => m.name === name)) {
-                showToast('이미 존재하는 메뉴입니다.');
+                showToast('이미 존재하는 메뉴입니다.', 'warning');
                 return;
             }
 
@@ -3342,7 +3427,7 @@
             saveCustomMenus(menus);
             input.value = '';
             loadCustomMenus();
-            showToast(name + ' 메뉴가 추가되었습니다!');
+            showToast(name + ' 메뉴가 추가되었습니다!', 'success');
         }
 
         function deleteCustomMenu(menuName) {
@@ -3351,7 +3436,7 @@
             menus = menus.filter(m => m.name !== menuName);
             saveCustomMenus(menus);
             loadCustomMenus();
-            showToast('메뉴가 삭제되었습니다.');
+            showToast('메뉴가 삭제되었습니다.', 'success');
         }
 
         function toggleCustomMenu(menuName) {
@@ -3466,7 +3551,7 @@
                     container.parentElement.querySelector('h4').textContent = '✅ 주소 선택 완료';
                     container.parentElement.querySelector('p').textContent = addr;
 
-                    showToast('주소가 입력되었습니다!');
+                    showToast('주소가 입력되었습니다!', 'success');
                     // 주소 선택 후 폼 입력 필드로 스크롤
                     setTimeout(function() {
                         document.getElementById('registerFormTitle').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3557,12 +3642,12 @@
             const passwordConfirm = document.getElementById('regStorePasswordConfirm').value;
 
             // Validate
-            if (!name) { showToast('매장 표시 이름을 입력해주세요.'); return; }
-            if (!addr) { showToast('주소를 입력해주세요.'); return; }
-            if (!region) { showToast('지역을 입력해주세요.'); return; }
-            if (!storeType) { showToast('매장 유형을 입력해주세요.'); return; }
-            if (!password || password.length < 4) { showToast('비밀번호를 4자리 이상 입력해주세요.'); return; }
-            if (password !== passwordConfirm) { showToast('비밀번호가 일치하지 않습니다.'); return; }
+            if (!name) { showToast('매장 표시 이름을 입력해주세요.', 'warning'); return; }
+            if (!addr) { showToast('주소를 입력해주세요.', 'warning'); return; }
+            if (!region) { showToast('지역을 입력해주세요.', 'warning'); return; }
+            if (!storeType) { showToast('매장 유형을 입력해주세요.', 'warning'); return; }
+            if (!password || password.length < 4) { showToast('비밀번호를 4자리 이상 입력해주세요.', 'warning'); return; }
+            if (password !== passwordConfirm) { showToast('비밀번호가 일치하지 않습니다.', 'warning'); return; }
 
             // Get existing custom stores
             let customStores = [];
@@ -3646,7 +3731,7 @@
             setSelectedStoreId(newId);
             hideStoreSelector();
             await applySelectedStore();
-            showToast(name + ' 매장이 등록되었습니다!');
+            showToast(name + ' 매장이 등록되었습니다! 🎉', 'success');
 
             // Reset form
             selectedNaverPlace = null;
