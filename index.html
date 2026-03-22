@@ -1396,30 +1396,43 @@
     '세종': {lat: 36.4800, lng: 127.2612}
   };
 
-  // localStorage 커스텀 매장 로드 (Supabase 없어도 작동)
+  // localStorage 커스텀 매장 로드 (중복 제거 + 좌표 보정)
   function loadLocalCustomStores() {
     try {
       var raw = localStorage.getItem('buttertteokmapCustomStores');
-      console.log('[지도] localStorage 커스텀 매장 raw:', raw ? raw.substring(0, 100) + '...' : 'null');
       var customStores = JSON.parse(raw || '[]');
-      console.log('[지도] 파싱된 커스텀 매장 수:', customStores.length);
+
+      // 1단계: 이름 기준 중복 제거 (같은 이름이면 첫번째만 유지)
+      var seen = {};
+      var deduped = [];
+      customStores.forEach(function(s) {
+        var key = (s.name || '').trim().toLowerCase();
+        if (!seen[key]) {
+          seen[key] = true;
+          deduped.push(s);
+        } else {
+          console.log('[지도] 중복 매장 제거:', s.name, 'id:', s.id);
+        }
+      });
+      if (deduped.length < customStores.length) {
+        customStores = deduped;
+        localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+        console.log('[지도] 중복 제거 후:', customStores.length, '개');
+      }
+
+      console.log('[지도] 커스텀 매장 수:', customStores.length);
       var added = 0;
-      var fixed = 0;
       customStores.forEach(function(s) {
         if (!stores.some(function(h) { return h.id === s.id; })) {
           var lat = parseFloat(s.lat);
           var lng = parseFloat(s.lng);
 
-          // 좌표가 없으면 지역 기반으로 자동 생성
+          // 좌표가 없으면 지역 기반으로 임시 생성 (나중에 지오코딩으로 보정)
           if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
             var rc = regionCoords[s.region] || regionCoords['서울'];
-            lat = rc.lat + (Math.random() - 0.5) * 0.02;
-            lng = rc.lng + (Math.random() - 0.5) * 0.02;
-            // localStorage도 업데이트 (다음번엔 바로 표시)
-            s.lat = lat;
-            s.lng = lng;
-            fixed++;
-            console.log('[지도] 좌표 자동생성:', s.name, '→', lat, lng);
+            lat = rc.lat + (Math.random() - 0.5) * 0.01;
+            lng = rc.lng + (Math.random() - 0.5) * 0.01;
+            s.lat = lat; s.lng = lng;
           }
 
           var mappedStore = {
@@ -1434,24 +1447,97 @@
             menu: s.menu || '버터떡',
             price: s.price || '문의',
             status: 'available',
-            stock: 999,
+            stock: 0,
             updated: '방금 전',
-            isFromLocal: true
+            isFromLocal: true,
+            needsGeocode: !!(s.addr && isNearRegionCenter(lat, lng, s.region))
           };
           stores.push(mappedStore);
           added++;
         }
       });
-      // 좌표가 수정된 게 있으면 localStorage 업데이트
-      if (fixed > 0) {
-        localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
-        console.log('[지도] ' + fixed + '개 매장 좌표 자동생성 후 localStorage 업데이트');
-      }
-      if (added > 0) console.log('[지도] localStorage에서 ' + added + '개의 커스텀 매장 추가됨. 총 stores:', stores.length);
-      else console.log('[지도] 추가된 커스텀 매장 없음');
+      if (added > 0) console.log('[지도] 커스텀 매장 ' + added + '개 추가됨. 총:', stores.length);
     } catch(e) {
-      console.error('[지도] localStorage 커스텀 매장 로드 실패:', e);
+      console.error('[지도] localStorage 로드 실패:', e);
     }
+  }
+
+  // 좌표가 지역 중심부 근처인지 판별 (지오코딩 필요 여부)
+  function isNearRegionCenter(lat, lng, region) {
+    var rc = regionCoords[region];
+    if (!rc) return true;
+    return Math.abs(lat - rc.lat) < 0.02 && Math.abs(lng - rc.lng) < 0.02;
+  }
+
+  // 카카오 지오코딩으로 커스텀 매장 좌표 자동 보정
+  function geocodeCustomStores() {
+    var storesNeedingGeocode = stores.filter(function(s) { return s.needsGeocode && s.addr; });
+    if (storesNeedingGeocode.length === 0) return;
+
+    // 카카오 Maps SDK 로드
+    var script = document.createElement('script');
+    script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services&autoload=false';
+    script.onload = function() {
+      kakao.maps.load(function() {
+        var geocoder = new kakao.maps.services.Geocoder();
+        var places = new kakao.maps.services.Places();
+        var updated = false;
+        var pending = storesNeedingGeocode.length;
+
+        storesNeedingGeocode.forEach(function(store) {
+          // 1차: 주소 검색
+          geocoder.addressSearch(store.addr, function(result, status) {
+            if (status === kakao.maps.services.Status.OK && result.length > 0) {
+              var newLat = parseFloat(result[0].y);
+              var newLng = parseFloat(result[0].x);
+              applyGeocode(store, newLat, newLng);
+              updated = true;
+            } else {
+              // 2차: 키워드 검색
+              places.keywordSearch(store.addr, function(result2, status2) {
+                if (status2 === kakao.maps.services.Status.OK && result2.length > 0) {
+                  var newLat = parseFloat(result2[0].y);
+                  var newLng = parseFloat(result2[0].x);
+                  applyGeocode(store, newLat, newLng);
+                  updated = true;
+                }
+                pending--;
+                if (pending <= 0 && updated) saveGeocodedStores();
+              });
+              return;
+            }
+            pending--;
+            if (pending <= 0 && updated) saveGeocodedStores();
+          });
+        });
+      });
+    };
+    document.head.appendChild(script);
+  }
+
+  function applyGeocode(store, newLat, newLng) {
+    console.log('[지오코딩]', store.name, ':', store.lat.toFixed(4), ',', store.lng.toFixed(4), '→', newLat.toFixed(4), ',', newLng.toFixed(4));
+    store.lat = newLat;
+    store.lng = newLng;
+    store.needsGeocode = false;
+    // 마커 위치 업데이트
+    if (markers[store.id] && map) {
+      markers[store.id].setPosition(new naver.maps.LatLng(newLat, newLng));
+    }
+  }
+
+  function saveGeocodedStores() {
+    try {
+      var raw = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+      stores.forEach(function(s) {
+        if (s.isFromLocal) {
+          var found = raw.find(function(r) { return r.id === s.id; });
+          if (found) { found.lat = s.lat; found.lng = s.lng; }
+        }
+      });
+      localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(raw));
+      console.log('[지오코딩] localStorage 좌표 업데이트 완료');
+    } catch(e) { console.warn('[지오코딩] 저장 실패:', e); }
   }
 
   // 마커 생성 후 추가로 커스텀 매장 마커 보장 (안전장치)
@@ -1505,6 +1591,13 @@
       ensureCustomStoreMarkers();
     } catch(e) {
       console.error('커스텀 마커 보장 실패:', e);
+    }
+
+    // 1.7단계: 좌표가 부정확한 커스텀 매장 자동 지오코딩
+    try {
+      geocodeCustomStores();
+    } catch(e) {
+      console.warn('지오코딩 실패:', e);
     }
 
     // 커스텀 매장이 있으면 자동으로 포커스
@@ -1922,8 +2015,10 @@
 
   function openNavi() {
     if (selectedStore) {
-      const naverMapUrl = `https://map.naver.com/search/${encodeURIComponent(selectedStore.name)}`;
-      window.open(naverMapUrl, "_blank");
+      // 주소 기반으로 검색 (동일 상호명 중복 방지)
+      var query = selectedStore.addr ? selectedStore.addr : selectedStore.name;
+      var naverMapUrl = 'https://map.naver.com/search/' + encodeURIComponent(query);
+      window.open(naverMapUrl, '_blank');
     }
   }
 
