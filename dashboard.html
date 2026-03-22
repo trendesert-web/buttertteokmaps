@@ -3894,11 +3894,22 @@
             }
 
             // Save password separately (hashed with simple btoa) - also to localStorage
-            localStorage.setItem('buttertteokmapStorePass_' + newId, btoa(password));
+            try {
+                localStorage.setItem('buttertteokmapStorePass_' + newId, btoa(password));
+            } catch(e) { console.warn('비밀번호 저장 실패:', e); }
 
-            // Save to localStorage
-            customStores.push(newStore);
-            localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+            // Save to localStorage (핵심! 지도에 표시되려면 반드시 성공해야 함)
+            try {
+                customStores.push(newStore);
+                localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+                console.log('[등록완료] localStorage에 저장됨. ID:', newId, 'lat:', newStore.lat, 'lng:', newStore.lng, '총:', customStores.length, '개');
+                // 검증: 바로 다시 읽어서 확인
+                var verify = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+                console.log('[등록검증] localStorage에서 읽은 매장 수:', verify.length);
+            } catch(e) {
+                console.error('localStorage 저장 실패!:', e);
+                showToast('저장 오류: 브라우저 저장소에 문제가 있습니다.', 'error');
+            }
 
             // Also add to allStores in memory
             allStores.push({
