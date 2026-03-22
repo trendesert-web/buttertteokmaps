@@ -2005,7 +2005,13 @@
         // Initialize Supabase
         const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_BPaOl0_ZZKvgEBDBCoO6mQ_QGKt81Dd';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let sb = null;
+        try {
+            if (window.supabase && window.supabase.createClient) {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) { console.warn('Supabase SDK 초기화 실패:', e); }
+        const supabase = sb;
 
         let currentStatus = 'available';
         let isGuestMode = false;
@@ -2068,6 +2074,7 @@
 
         // Load stores from Supabase with fallback to localStorage
         async function loadStoresFromDB() {
+            if (!supabase) return [];
             try {
                 const { data, error } = await supabase.from('stores').select('*').order('id');
                 if (error) throw error;
@@ -2097,6 +2104,7 @@
 
         // Load stock from Supabase
         async function loadStockFromDB(storeId) {
+            if (!supabase) return undefined;
             try {
                 const { data, error } = await supabase.from('stock').select('stock_count, updated_at').eq('store_id', storeId).single();
                 if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" errors
@@ -2109,6 +2117,7 @@
 
         // Save stock to Supabase
         async function saveStockToDB(storeId, stock) {
+            if (!supabase) return undefined;
             try {
                 const { error } = await supabase.from('stock').upsert({
                     store_id: storeId,
@@ -2124,6 +2133,7 @@
 
         // Load coupons from Supabase
         async function loadCouponsFromDB(storeId) {
+            if (!supabase) return [];
             try {
                 const { data, error } = await supabase.from('coupons').select('*').eq('store_id', storeId);
                 if (error) throw error;
@@ -2136,6 +2146,7 @@
 
         // Save coupon to Supabase
         async function saveCouponToDB(coupon, storeId) {
+            if (!supabase) return undefined;
             try {
                 const { error } = await supabase.from('coupons').insert({
                     store_id: storeId,
@@ -2160,6 +2171,7 @@
 
         // Delete coupon from Supabase
         async function deleteCouponFromDB(couponId) {
+            if (!supabase) return undefined;
             try {
                 const { error } = await supabase.from('coupons').delete().eq('id', couponId);
                 if (error) throw error;
@@ -2551,6 +2563,7 @@
         }
 
         async function saveStoreInfo() {
+            if (!supabase) return undefined;
             const area = document.getElementById('imageUploadArea');
             const imgEl = area.querySelector('img');
             const desc = document.getElementById('storeDescInput').value.trim();
@@ -3064,6 +3077,7 @@
         let _pendingStoreId = null;
 
         async function selectStore(storeId) {
+            if (!supabase) return undefined;
             // Try to get password from Supabase first
             let savedPass = null;
             try {
@@ -3093,6 +3107,7 @@
         }
 
         async function confirmPasswordModal() {
+            if (!supabase) return undefined;
             const input = document.getElementById('passwordModalInput');
             const pass = input.value;
             if (!pass) { input.style.borderColor = '#F44336'; return; }
@@ -3530,6 +3545,7 @@
         }
 
         async function registerNewStore() {
+            if (!supabase) return undefined;
             const name = document.getElementById('regStoreName').value.trim();
             const addr = document.getElementById('regStoreAddr').value.trim();
             const region = document.getElementById('regStoreRegion').value.trim();

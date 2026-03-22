@@ -1141,7 +1141,13 @@
         // ===== SUPABASE CONFIG =====
         const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_BPaOl0_ZZKvgEBDBCoO6mQ_QGKt81Dd';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let sb = null;
+        try {
+            if (window.supabase && window.supabase.createClient) {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) { console.warn('Supabase SDK 초기화 실패:', e); }
+        const supabase = sb;
 
         // ===== GLOBAL STATE =====
         let isAdminLoggedIn = false;
@@ -1244,6 +1250,7 @@
 
         // ===== AUTHENTICATION =====
         async function initializeAuth() {
+            if (!supabase) return undefined;
             try {
                 const { data, error } = await supabase.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
 
@@ -1269,6 +1276,7 @@
         }
 
         async function handleSetupPassword() {
+            if (!supabase) return undefined;
             const pass1 = document.getElementById('setupPass1').value;
             const pass2 = document.getElementById('setupPass2').value;
 
@@ -1308,6 +1316,7 @@
         }
 
         async function handleLogin(e) {
+            if (!supabase) return undefined;
             e.preventDefault();
             const password = document.getElementById('adminPassword').value;
 
@@ -1364,6 +1373,7 @@
 
         // ===== DATA MANAGEMENT =====
         async function loadAllData() {
+            if (!supabase) return undefined;
             try {
                 // Load stores from Supabase
                 const { data: stores, error: storesError } = await supabase.from('stores').select('*').order('id');
@@ -1403,6 +1413,7 @@
         }
 
         async function toggleStoreBan(id) {
+            if (!supabase) return undefined;
             const isBanned = isStoreBanned(id);
             const newBanStatus = !isBanned;
 
@@ -1435,6 +1446,7 @@
                 '매장 삭제',
                 '이 커스텀 매장을 삭제하시겠습니까?',
                 async () => {
+                    if (!supabase) return undefined;
                     try {
                         const { error } = await supabase.from('stores').delete().eq('id', id);
                         if (error) throw error;
@@ -1648,6 +1660,7 @@
         }
 
         async function saveStoreEdit() {
+            if (!supabase) return undefined;
             const name = document.getElementById('editStoreName').value;
             const addr = document.getElementById('editStoreAddr').value;
             const region = document.getElementById('editStoreRegion').value;
@@ -1742,6 +1755,7 @@
         }
 
         async function saveSanction() {
+            if (!supabase) return undefined;
             const storeSelect = document.getElementById('sanctionStoreSelect').value;
             const reason = document.getElementById('sanctionReason').value;
 
@@ -1796,6 +1810,7 @@
         }
 
         async function liftSanction(idx) {
+            if (!supabase) return undefined;
             if (sanctionsData[idx]) {
                 const sanctionId = sanctionsData[idx].id;
 
@@ -1822,6 +1837,7 @@
                 '제재 삭제',
                 '이 제재 기록을 삭제하시겠습니까?',
                 async () => {
+                    if (!supabase) return undefined;
                     const sanctionId = sanctionsData[idx].id;
 
                     try {
@@ -1845,6 +1861,7 @@
 
         // ===== STATISTICS =====
         async function renderStatistics() {
+            if (!supabase) return undefined;
             const allStoresDisplay = [...allStoresData, ...customStoresData];
 
             // Update stat cards
