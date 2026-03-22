@@ -179,7 +179,7 @@
         .container {
             max-width: 480px;
             margin: 0 auto;
-            padding: 20px 16px;
+            padding: 20px 16px 80px 16px;
         }
 
         /* Guest Mode Banner */
@@ -1659,6 +1659,89 @@
             color: var(--color-text-secondary);
             font-size: 13px;
         }
+
+        /* Bottom Tab Bar */
+        .bottom-tab-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 64px;
+          background: rgba(254, 250, 246, 0.95);
+          backdrop-filter: blur(20px);
+          border-top: 1px solid rgba(212, 165, 116, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: space-around;
+          z-index: 500;
+          padding-bottom: env(safe-area-inset-bottom, 0);
+          box-shadow: 0 -2px 20px rgba(139, 94, 60, 0.06);
+        }
+
+        .tab-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          padding: 6px 16px;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          -webkit-tap-highlight-color: transparent;
+          position: relative;
+          min-width: 64px;
+        }
+
+        .tab-item:active {
+          transform: scale(0.92);
+        }
+
+        .tab-item .tab-icon {
+          font-size: 22px;
+          line-height: 1;
+          transition: transform 0.2s ease;
+        }
+
+        .tab-item .tab-label {
+          font-size: 10px;
+          font-weight: 600;
+          color: #B0A090;
+          transition: color 0.2s ease;
+          letter-spacing: -0.2px;
+        }
+
+        .tab-item.active {
+          background: rgba(212, 165, 116, 0.12);
+        }
+
+        .tab-item.active .tab-icon {
+          transform: scale(1.1);
+        }
+
+        .tab-item.active .tab-label {
+          color: #8B5E3C;
+          font-weight: 700;
+        }
+
+        .tab-item.active::after {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 24px;
+          height: 3px;
+          background: linear-gradient(90deg, #D4A574, #F4845F);
+          border-radius: 0 0 3px 3px;
+        }
+
+        /* Tab content panels */
+        .tab-panel {
+          display: none;
+        }
+        .tab-panel.active {
+          display: block;
+        }
     </style>
 </head>
 <body>
@@ -1834,6 +1917,9 @@
                 </div>
             </div>
 
+            <!-- Tab Content Panels -->
+            <div id="tabStock" class="tab-panel active">
+
             <!-- Stock Control Card -->
             <div class="card stock-card">
                 <label class="stock-label">현재 재고</label>
@@ -1855,6 +1941,21 @@
                 <button class="update-btn" onclick="updateStock()">업데이트</button>
                 <div class="last-updated" id="lastUpdated"></div>
             </div>
+
+            <!-- Notice Card (in Stock Tab) -->
+            <div class="card notice-card">
+                <div class="notice-content">
+                    <div class="notice-icon">⚠️</div>
+                    <div class="notice-text">
+                        <strong>중요 안내</strong>
+                        <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
+                        <div class="contact-info">문의: trendesert@gmail.com</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div id="tabMenu" class="tab-panel">
 
             <!-- Menu Management Card -->
             <div class="card menu-section">
@@ -1882,6 +1983,9 @@
                     <button class="menu-add-btn" onclick="addCustomMenu()">+ 추가</button>
                 </div>
             </div>
+            </div>
+
+            <div id="tabIntro" class="tab-panel">
 
             <!-- Store Image Upload Card -->
             <div class="card">
@@ -1930,6 +2034,9 @@
                     </div>
                 </div>
             </div>
+            </div>
+
+            <div id="tabCoupon" class="tab-panel">
 
             <!-- Coupon Management Card -->
             <div class="card">
@@ -2015,19 +2122,29 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Notice Card -->
-            <div class="card notice-card">
-                <div class="notice-content">
-                    <div class="notice-icon">⚠️</div>
-                    <div class="notice-text">
-                        <strong>중요 안내</strong>
-                        <p>재고는 정확하게 입력해주세요. 허위 정보 입력 시 매장이 비활성화될 수 있습니다.</p>
-                        <div class="contact-info">문의: trendesert@gmail.com</div>
-                    </div>
-                </div>
             </div>
         </div>
+
+        <!-- Bottom Tab Bar -->
+        <nav class="bottom-tab-bar" id="bottomTabBar">
+            <div class="tab-item active" data-tab="tabStock" onclick="switchTab('tabStock', this)">
+                <span class="tab-icon">📦</span>
+                <span class="tab-label">재고</span>
+            </div>
+            <div class="tab-item" data-tab="tabMenu" onclick="switchTab('tabMenu', this)">
+                <span class="tab-icon">🍽️</span>
+                <span class="tab-label">메뉴</span>
+            </div>
+            <div class="tab-item" data-tab="tabIntro" onclick="switchTab('tabIntro', this)">
+                <span class="tab-icon">🏪</span>
+                <span class="tab-label">소개</span>
+            </div>
+            <div class="tab-item" data-tab="tabCoupon" onclick="switchTab('tabCoupon', this)">
+                <span class="tab-icon">🎫</span>
+                <span class="tab-label">쿠폰</span>
+            </div>
+        </nav>
+    </div>
 
         <div class="toast" id="toast" style="display: none;"></div>
 
@@ -2057,6 +2174,38 @@
     <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
+        // Tab Navigation
+        function switchTab(tabId, tabElement) {
+            // Hide all panels
+            document.querySelectorAll('.tab-panel').forEach(function(panel) {
+                panel.classList.remove('active');
+            });
+            // Deactivate all tabs
+            document.querySelectorAll('.tab-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
+            // Show selected panel
+            var panel = document.getElementById(tabId);
+            if (panel) panel.classList.add('active');
+            // Activate selected tab
+            if (tabElement) tabElement.classList.add('active');
+
+            // Update header title
+            var titles = {
+                'tabStock': '📦 재고 관리',
+                'tabMenu': '🍽️ 메뉴 관리',
+                'tabIntro': '🏪 매장 소개',
+                'tabCoupon': '🎫 쿠폰 관리'
+            };
+            var headerTitle = document.querySelector('.header-title span:nth-child(2)');
+            if (headerTitle && titles[tabId]) {
+                headerTitle.textContent = titles[tabId];
+            }
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDHLjmS_uPeuD5FFSCnmH2UwqVmWgCyZgY",
