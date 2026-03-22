@@ -1231,18 +1231,21 @@
             document.getElementById(id).classList.remove('active');
         }
 
-        function switchTab(tabName) {
+        async function switchTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.navbar-tab').forEach(btn => btn.classList.remove('active'));
 
             // Show selected tab
             document.getElementById(tabName + 'Tab').classList.add('active');
-            event.target.classList.add('active');
+            if (event && event.target) {
+                var btn = event.target.closest('.navbar-tab') || event.target;
+                btn.classList.add('active');
+            }
 
             // Load tab data
             if (tabName === 'stats') {
-                renderStatistics();
+                await renderStatistics();
             } else if (tabName === 'sanctions') {
                 renderSanctions();
             }

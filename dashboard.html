@@ -726,7 +726,7 @@
         }
 
         .toast.hide {
-            animation: slideUpToast 0.4s ease-out;
+            animation: slideUpToast 0.4s ease-out forwards;
         }
 
         @keyframes slideUpToast {
@@ -3047,8 +3047,8 @@
                             </div>
                         </div>
                         <div class="issued-coupon-actions">
-                            <button class="coupon-action-sm copy" onclick="copyCouponCode('${c.code}')">복사</button>
-                            <button class="coupon-action-sm delete" onclick="deleteCoupon('${c.id}')">삭제</button>
+                            <button class="coupon-action-sm copy" onclick="copyCouponCode('${escapeHtml(c.code)}')">복사</button>
+                            <button class="coupon-action-sm delete" onclick="deleteCoupon('${escapeHtml(String(c.id))}')">삭제</button>
                         </div>
                     </div>
                 `;
@@ -3623,8 +3623,8 @@
                 <li class="menu-item">
                     <span class="menu-name">${m.name}</span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button class="toggle-switch${m.active ? ' active' : ''}" onclick="toggleMenu(this); toggleCustomMenu('${m.name}')"></button>
-                        <button class="menu-delete-btn" onclick="deleteCustomMenu('${m.name}')" title="삭제">✕</button>
+                        <button class="toggle-switch${m.active ? ' active' : ''}" onclick="toggleMenu(this); toggleCustomMenu('${escapeHtml(m.name)}')"></button>
+                        <button class="menu-delete-btn" onclick="deleteCustomMenu('${escapeHtml(m.name)}')" title="삭제">✕</button>
                     </div>
                 </li>
             `).join('');
