@@ -1011,6 +1011,30 @@
       color: var(--color-text-secondary);
       font-size: 12px;
     }
+
+    @keyframes customMarkerPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 4px 16px rgba(74, 144, 217, 0.5); }
+      50% { transform: scale(1.1); box-shadow: 0 6px 24px rgba(74, 144, 217, 0.7); }
+    }
+    .custom-store-banner {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #4A90D9, #357ABD);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 600;
+      box-shadow: 0 4px 20px rgba(74, 144, 217, 0.4);
+      cursor: pointer;
+      transition: all 0.3s;
+      max-width: 90%;
+      text-align: center;
+    }
+    .custom-store-banner:hover { transform: translateX(-50%) scale(1.02); }
   </style>
 </head>
 <body>
@@ -1335,16 +1359,17 @@
       newStores.forEach(function(supabaseStore) {
         var s = stores.find(function(st) { return st.id === supabaseStore.id; });
         if (s && s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng) && !markers[s.id]) {
+          var isCustom = s.isFromLocal || s.isFromSupabase;
           var color = s.status === 'available' ? '#6BAF7B' : s.status === 'low' ? '#E8B84B' : '#E85D5D';
           var marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(s.lat, s.lng),
             map: map,
             title: s.name,
             icon: {
-              content: createMarkerIcon(s.stock, color),
-              size: new naver.maps.Size(44, 44),
-              scaledSize: new naver.maps.Size(44, 44),
-              anchor: new naver.maps.Point(22, 22)
+              content: isCustom ? createCustomMarkerIcon(s.stock, s.name) : createMarkerIcon(s.stock, color),
+              size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+              scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+              anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
             }
           });
           marker.storeId = s.id;
@@ -1435,16 +1460,15 @@
       if (typeof naver === 'undefined' || !map) return;
       stores.forEach(function(s) {
         if (s.isFromLocal && !markers[s.id] && s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng)) {
-          var color = '#6BAF7B';
           var marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(s.lat, s.lng),
             map: map,
             title: s.name,
             icon: {
-              content: createMarkerIcon(s.stock || 999, color),
-              size: new naver.maps.Size(44, 44),
-              scaledSize: new naver.maps.Size(44, 44),
-              anchor: new naver.maps.Point(22, 22)
+              content: createCustomMarkerIcon(s.stock || 0, s.name),
+              size: new naver.maps.Size(52, 52),
+              scaledSize: new naver.maps.Size(52, 52),
+              anchor: new naver.maps.Point(26, 26)
             }
           });
           marker.storeId = s.id;
@@ -1481,6 +1505,28 @@
       ensureCustomStoreMarkers();
     } catch(e) {
       console.error('커스텀 마커 보장 실패:', e);
+    }
+
+    // 커스텀 매장이 있으면 자동으로 포커스
+    var customStoresOnMap = stores.filter(function(s) { return s.isFromLocal; });
+    if (customStoresOnMap.length > 0 && map) {
+      var firstCustom = customStoresOnMap[0];
+      if (firstCustom.lat && firstCustom.lng && !isNaN(firstCustom.lat) && !isNaN(firstCustom.lng)) {
+        setTimeout(function() {
+          map.setCenter(new naver.maps.LatLng(firstCustom.lat, firstCustom.lng));
+          map.setZoom(14);
+          // 배너 표시
+          var banner = document.createElement('div');
+          banner.className = 'custom-store-banner';
+          banner.innerHTML = '⭐ 등록 매장 ' + customStoresOnMap.length + '개: ' + customStoresOnMap.map(function(s){ return s.name; }).join(', ');
+          banner.onclick = function() {
+            if (customStoresOnMap[0]) openStore(customStoresOnMap[0]);
+            banner.remove();
+          };
+          document.body.appendChild(banner);
+          setTimeout(function() { banner.remove(); }, 8000);
+        }, 500);
+      }
     }
 
     // 2단계: Supabase를 비동기로 로드 후 추가 매장 합치기 (지도는 이미 떠 있음)
@@ -1536,16 +1582,17 @@
       // Skip if marker already exists (prevent duplicates)
       if (markers[store.id]) return;
 
+      const isCustom = store.isFromLocal || store.isFromSupabase;
       const color = store.status === "available" ? "#6BAF7B" : store.status === "low" ? "#E8B84B" : "#E85D5D";
       const marker = new naver.maps.Marker({
         position: new naver.maps.LatLng(store.lat, store.lng),
         map: map,
         title: store.name,
         icon: {
-          content: createMarkerIcon(store.stock, color),
-          size: new naver.maps.Size(44, 44),
-          scaledSize: new naver.maps.Size(44, 44),
-          anchor: new naver.maps.Point(22, 22)
+          content: isCustom ? createCustomMarkerIcon(store.stock, store.name) : createMarkerIcon(store.stock, color),
+          size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+          scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
+          anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
         }
       });
 
@@ -1574,6 +1621,33 @@
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
       ">
         ${stock > 999 ? "∞" : stock}
+      </div>
+    `;
+  }
+
+  function createCustomMarkerIcon(stock, storeName) {
+    return `
+      <div style="
+        position: relative;
+        width: 52px;
+        height: 52px;
+        background: #4A90D9;
+        border: 3px solid #FFD700;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 4px 16px rgba(74, 144, 217, 0.5);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        animation: customMarkerPulse 2s ease-in-out infinite;
+      ">
+        <div style="text-align:center;line-height:1.1;">
+          <div style="font-size:8px;">⭐NEW</div>
+          <div>${stock > 999 ? "∞" : stock}</div>
+        </div>
       </div>
     `;
   }

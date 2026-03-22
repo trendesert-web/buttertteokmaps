@@ -624,9 +624,10 @@
         /* Toast Notification */
         .toast {
             position: fixed;
-            top: 20px;
+            bottom: 20px;
+            top: auto;
             left: 50%;
-            transform: translateX(-50%) translateY(-150px);
+            transform: translateX(-50%) translateY(150px);
             background: linear-gradient(135deg, var(--color-success), rgba(107, 175, 123, 0.85));
             color: white;
             padding: 18px 28px;
@@ -699,7 +700,7 @@
 
         @keyframes slideDownToast {
             from {
-                transform: translateX(-50%) translateY(-150px);
+                transform: translateX(-50%) translateY(150px);
                 opacity: 0;
             }
             to {
@@ -738,7 +739,7 @@
                 opacity: 1;
             }
             to {
-                transform: translateX(-50%) translateY(-150px);
+                transform: translateX(-50%) translateY(150px);
                 opacity: 0;
             }
         }
@@ -2667,14 +2668,14 @@
             if (!toastContainer) {
                 toastContainer = document.createElement('div');
                 toastContainer.id = 'toastContainer';
-                toastContainer.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; pointer-events: none; z-index: 9998;';
+                toastContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 9998;';
                 document.body.appendChild(toastContainer);
             }
 
             // Create toast element
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.style.cssText = 'position: fixed; top: 12px; left: 50%; transform: translateX(-50%) translateY(-150px); z-index: 99999; pointer-events: auto; animation: slideDownToast 0.4s ease-out forwards;';
+            toast.style.cssText = 'position: fixed; bottom: 20px; top: auto; left: 50%; transform: translateX(-50%) translateY(150px); z-index: 99999; pointer-events: auto; animation: slideDownToast 0.4s ease-out forwards;';
 
             // Build toast HTML
             const messageDiv = document.createElement('div');
@@ -3939,6 +3940,14 @@
             hideStoreSelector();
             await applySelectedStore();
             showToast(name + ' 매장이 등록되었습니다! 🎉', 'success');
+
+            // 지도 링크 팝업 표시
+            setTimeout(function() {
+                var goToMap = confirm('매장이 등록되었습니다!\n\n지도에서 바로 확인하시겠습니까?');
+                if (goToMap) {
+                    window.open('index.html', '_blank');
+                }
+            }, 500);
 
             // Reset form
             selectedNaverPlace = null;
