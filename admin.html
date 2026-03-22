@@ -1141,13 +1141,12 @@
         // ===== SUPABASE CONFIG =====
         const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyYmlhaWdtdnBxZnZ2aWZ3YWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMjQ3MjYsImV4cCI6MjA4OTcwMDcyNn0.S1RjRi2KPrwbOcB9UwOfabKWP1tQWrYsXgcR1qRan5E';
-        let sb = null;
+        var sbClient = null;
         try {
             if (window.supabase && window.supabase.createClient) {
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             }
         } catch(e) { console.warn('Supabase SDK 초기화 실패:', e); }
-        const supabase = sb;
 
         // ===== GLOBAL STATE =====
         let isAdminLoggedIn = false;
@@ -1283,9 +1282,9 @@
             }
 
             // Also try to sync with Supabase in the background (non-blocking)
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { data, error } = await supabase.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
+                    const { data, error } = await sbClient.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
                     if (!error && data && !hasPassword) {
                         // Supabase has password but localStorage doesn't - sync it
                         localStorage.setItem('buttertteokmapAdminPass', data.setting_value);
@@ -1321,9 +1320,9 @@
             localStorage.setItem('buttertteokmapAdminPass', encodedPassword);
 
             // Then try to save to Supabase in background (non-blocking)
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    await supabase.from('admin_settings').upsert(
+                    await sbClient.from('admin_settings').upsert(
                         { setting_key: 'admin_password', setting_value: encodedPassword },
                         { onConflict: 'setting_key' }
                     );
@@ -1359,9 +1358,9 @@
             }
 
             // If localStorage doesn't match, try Supabase in background (non-blocking)
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { data, error } = await supabase.from('admin_settings')
+                    const { data, error } = await sbClient.from('admin_settings')
                         .select('setting_value').eq('setting_key', 'admin_password').single();
 
                     if (!error && data && encodedInput === data.setting_value) {
@@ -1403,10 +1402,10 @@
 
         // ===== DATA MANAGEMENT =====
         async function loadAllData() {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             try {
                 // Load stores from Supabase
-                const { data: stores, error: storesError } = await supabase.from('stores').select('*').order('id');
+                const { data: stores, error: storesError } = await sbClient.from('stores').select('*').order('id');
                 if (storesError) throw storesError;
 
                 // Separate default and custom stores
@@ -1414,7 +1413,7 @@
                 customStoresData = stores?.filter(s => s.is_custom) || [];
 
                 // Load sanctions from Supabase
-                const { data: sanctions, error: sanctionsError } = await supabase.from('sanctions').select('*').order('created_at', { ascending: false });
+                const { data: sanctions, error: sanctionsError } = await sbClient.from('sanctions').select('*').order('created_at', { ascending: false });
                 if (sanctionsError) throw sanctionsError;
                 sanctionsData = sanctions || [];
 
@@ -1443,12 +1442,12 @@
         }
 
         async function toggleStoreBan(id) {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             const isBanned = isStoreBanned(id);
             const newBanStatus = !isBanned;
 
             try {
-                const { error } = await supabase.from('stores').update({ is_banned: newBanStatus }).eq('id', id);
+                const { error } = await sbClient.from('stores').update({ is_banned: newBanStatus }).eq('id', id);
                 if (error) throw error;
 
                 const store = allStoresDisplay.find(s => s.id === id);
@@ -1476,9 +1475,9 @@
                 '매장 삭제',
                 '이 커스텀 매장을 삭제하시겠습니까?',
                 async () => {
-                    if (!supabase) return undefined;
+                    if (!sbClient) return undefined;
                     try {
-                        const { error } = await supabase.from('stores').delete().eq('id', id);
+                        const { error } = await sbClient.from('stores').delete().eq('id', id);
                         if (error) throw error;
 
                         customStoresData = customStoresData.filter(s => s.id !== id);
@@ -1690,7 +1689,7 @@
         }
 
         async function saveStoreEdit() {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             const name = document.getElementById('editStoreName').value;
             const addr = document.getElementById('editStoreAddr').value;
             const region = document.getElementById('editStoreRegion').value;
@@ -1701,7 +1700,7 @@
             }
 
             try {
-                const { error } = await supabase.from('stores').update({ name, addr, region }).eq('id', currentEditStoreId);
+                const { error } = await sbClient.from('stores').update({ name, addr, region }).eq('id', currentEditStoreId);
                 if (error) throw error;
 
                 const store = getStoreById(currentEditStoreId);
@@ -1785,7 +1784,7 @@
         }
 
         async function saveSanction() {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             const storeSelect = document.getElementById('sanctionStoreSelect').value;
             const reason = document.getElementById('sanctionReason').value;
 
@@ -1803,7 +1802,7 @@
             };
 
             try {
-                const { data, error } = await supabase.from('sanctions').insert([newSanction]).select();
+                const { data, error } = await sbClient.from('sanctions').insert([newSanction]).select();
                 if (error) throw error;
 
                 if (data && data[0]) {
@@ -1840,12 +1839,12 @@
         }
 
         async function liftSanction(idx) {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             if (sanctionsData[idx]) {
                 const sanctionId = sanctionsData[idx].id;
 
                 try {
-                    const { error } = await supabase.from('sanctions').update({ status: 'lifted' }).eq('id', sanctionId);
+                    const { error } = await sbClient.from('sanctions').update({ status: 'lifted' }).eq('id', sanctionId);
                     if (error) throw error;
 
                     sanctionsData[idx].status = 'lifted';
@@ -1867,11 +1866,11 @@
                 '제재 삭제',
                 '이 제재 기록을 삭제하시겠습니까?',
                 async () => {
-                    if (!supabase) return undefined;
+                    if (!sbClient) return undefined;
                     const sanctionId = sanctionsData[idx].id;
 
                     try {
-                        const { error } = await supabase.from('sanctions').delete().eq('id', sanctionId);
+                        const { error } = await sbClient.from('sanctions').delete().eq('id', sanctionId);
                         if (error) throw error;
 
                         sanctionsData.splice(idx, 1);
@@ -1891,7 +1890,7 @@
 
         // ===== STATISTICS =====
         async function renderStatistics() {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             const allStoresDisplay = [...allStoresData, ...customStoresData];
 
             // Update stat cards
@@ -1907,7 +1906,7 @@
             // Count coupons from Supabase
             let couponCount = 0;
             try {
-                const { data: coupons, error } = await supabase.from('coupons').select('id', { count: 'exact' });
+                const { data: coupons, error } = await sbClient.from('coupons').select('id', { count: 'exact' });
                 if (error) throw error;
                 couponCount = coupons?.length || 0;
             } catch (e) {

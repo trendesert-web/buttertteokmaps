@@ -2070,13 +2070,13 @@
         // Initialize Supabase
         const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyYmlhaWdtdnBxZnZ2aWZ3YWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMjQ3MjYsImV4cCI6MjA4OTcwMDcyNn0.S1RjRi2KPrwbOcB9UwOfabKWP1tQWrYsXgcR1qRan5E';
-        let sb = null;
+        var sbClient = null;  // 'supabase' 이름은 CDN 전역변수와 충돌하므로 sbClient 사용
         try {
             if (window.supabase && window.supabase.createClient) {
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase 연결 성공');
             }
         } catch(e) { console.warn('Supabase SDK 초기화 실패:', e); }
-        const supabase = sb;
 
         // ============================================
         // SYNC QUEUE SYSTEM (오프라인 저장 → 자동 동기화)
@@ -2108,7 +2108,7 @@
         }
 
         async function processSyncQueue() {
-            if (!supabase) return;
+            if (!sbClient) return;
             const queue = getSyncQueue();
             if (queue.length === 0) return;
 
@@ -2121,15 +2121,15 @@
                 try {
                     var result = null;
                     if (op.type === 'insert_store') {
-                        result = await supabase.from('stores').upsert(op.data, { onConflict: 'id' });
+                        result = await sbClient.from('stores').upsert(op.data, { onConflict: 'id' });
                     } else if (op.type === 'upsert_stock') {
-                        result = await supabase.from('stock').upsert(op.data, { onConflict: 'store_id' });
+                        result = await sbClient.from('stock').upsert(op.data, { onConflict: 'store_id' });
                     } else if (op.type === 'insert_coupon') {
-                        result = await supabase.from('coupons').insert(op.data);
+                        result = await sbClient.from('coupons').insert(op.data);
                     } else if (op.type === 'delete_coupon') {
-                        result = await supabase.from('coupons').delete().eq('id', op.data.id);
+                        result = await sbClient.from('coupons').delete().eq('id', op.data.id);
                     } else if (op.type === 'upsert_store_info') {
-                        result = await supabase.from('store_info').upsert(op.data, { onConflict: 'store_id' });
+                        result = await sbClient.from('store_info').upsert(op.data, { onConflict: 'store_id' });
                     }
 
                     if (result && result.error) throw result.error;
@@ -2255,9 +2255,9 @@
 
         // Load stores from Supabase with fallback to localStorage
         async function loadStoresFromDB() {
-            if (!supabase) return [];
+            if (!sbClient) return [];
             try {
-                const { data, error } = await supabase.from('stores').select('*').order('id');
+                const { data, error } = await sbClient.from('stores').select('*').order('id');
                 if (error) throw error;
                 if (data && data.length > 0) {
                     allStores = data.map(s => ({
@@ -2285,9 +2285,9 @@
 
         // Load stock from Supabase
         async function loadStockFromDB(storeId) {
-            if (!supabase) return undefined;
+            if (!sbClient) return undefined;
             try {
-                const { data, error } = await supabase.from('stock').select('stock_count, updated_at').eq('store_id', storeId).single();
+                const { data, error } = await sbClient.from('stock').select('stock_count, updated_at').eq('store_id', storeId).single();
                 if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" errors
                 return data;
             } catch(e) {
@@ -2303,12 +2303,12 @@
                 stock_count: stock,
                 updated_at: new Date().toISOString()
             };
-            if (!supabase) {
+            if (!sbClient) {
                 addToSyncQueue({ type: 'upsert_stock', data: stockData });
                 return;
             }
             try {
-                const { error } = await supabase.from('stock').upsert(stockData, { onConflict: 'store_id' });
+                const { error } = await sbClient.from('stock').upsert(stockData, { onConflict: 'store_id' });
                 if (error) throw error;
                 console.log('Stock saved to Supabase');
             } catch(e) {
@@ -2319,9 +2319,9 @@
 
         // Load coupons from Supabase
         async function loadCouponsFromDB(storeId) {
-            if (!supabase) return [];
+            if (!sbClient) return [];
             try {
-                const { data, error } = await supabase.from('coupons').select('*').eq('store_id', storeId);
+                const { data, error } = await sbClient.from('coupons').select('*').eq('store_id', storeId);
                 if (error) throw error;
                 return data || [];
             } catch(e) {
@@ -2346,12 +2346,12 @@
                 created_at: coupon.createdAt,
                 active: coupon.active
             };
-            if (!supabase) {
+            if (!sbClient) {
                 addToSyncQueue({ type: 'insert_coupon', data: couponData });
                 return;
             }
             try {
-                const { error } = await supabase.from('coupons').insert(couponData);
+                const { error } = await sbClient.from('coupons').insert(couponData);
                 if (error) throw error;
                 console.log('Coupon saved to Supabase');
             } catch(e) {
@@ -2362,12 +2362,12 @@
 
         // Delete coupon from Supabase (with sync queue fallback)
         async function deleteCouponFromDB(couponId) {
-            if (!supabase) {
+            if (!sbClient) {
                 addToSyncQueue({ type: 'delete_coupon', data: { id: couponId } });
                 return;
             }
             try {
-                const { error } = await supabase.from('coupons').delete().eq('id', couponId);
+                const { error } = await sbClient.from('coupons').delete().eq('id', couponId);
                 if (error) throw error;
                 console.log('Coupon deleted from Supabase');
             } catch(e) {
@@ -2799,9 +2799,9 @@
                 image_url: (imgEl && imgEl.src) ? imgEl.src : null,
                 updated_at: new Date().toISOString()
             };
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { error } = await supabase.from('store_info').upsert(infoData, { onConflict: 'store_id' });
+                    const { error } = await sbClient.from('store_info').upsert(infoData, { onConflict: 'store_id' });
                     if (error) throw error;
                 } catch (e) {
                     console.warn('Supabase 저장 실패, 큐에 추가:', e);
@@ -3308,9 +3308,9 @@
         async function selectStore(storeId) {
             // Try to get password from Supabase first
             let savedPass = null;
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { data, error } = await supabase.from('stores').select('password_hash').eq('id', storeId).single();
+                    const { data, error } = await sbClient.from('stores').select('password_hash').eq('id', storeId).single();
                     if (data && !error) {
                         savedPass = data.password_hash;
                     }
@@ -3343,9 +3343,9 @@
 
             // Try to get password from Supabase first
             let savedPass = null;
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { data, error } = await supabase.from('stores').select('password_hash').eq('id', _pendingStoreId).single();
+                    const { data, error } = await sbClient.from('stores').select('password_hash').eq('id', _pendingStoreId).single();
                     if (data && !error) {
                         savedPass = data.password_hash;
                     }
@@ -3879,9 +3879,9 @@
                 is_default: false,
                 is_banned: false
             };
-            if (supabase) {
+            if (sbClient) {
                 try {
-                    const { data, error } = await supabase.from('stores').insert(storeDbData).select().single();
+                    const { data, error } = await sbClient.from('stores').insert(storeDbData).select().single();
                     if (error) throw error;
                     console.log('Store saved to Supabase with lat:', storeLat, 'lng:', storeLng);
                 } catch(e) {

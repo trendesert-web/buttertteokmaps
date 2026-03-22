@@ -1173,7 +1173,7 @@
   // ============================================
   const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRyYmlhaWdtdnBxZnZ2aWZ3YWR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMjQ3MjYsImV4cCI6MjA4OTcwMDcyNn0.S1RjRi2KPrwbOcB9UwOfabKWP1tQWrYsXgcR1qRan5E';
-  let supabase = null;
+  var sbClient = null;  // 'supabase' 이름은 CDN과 충돌하므로 sbClient 사용
 
   // Supabase SDK를 비동기로 로드 (지도 렌더링을 블로킹하지 않음)
   function loadSupabaseSDK() {
@@ -1183,7 +1183,7 @@
       script.onload = function() {
         try {
           if (window.supabase && window.supabase.createClient) {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             console.log('Supabase 연결 성공');
           }
         } catch(e) { console.warn('Supabase 초기화 실패:', e); }
@@ -1257,9 +1257,9 @@
   // SUPABASE DATA LOADING
   // ============================================
   async function loadStoresFromDB() {
-    if (!supabase) return [];
+    if (!sbClient) return [];
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sbClient
         .from('stores')
         .select('*')
         .eq('is_banned', false)
@@ -1273,9 +1273,9 @@
   }
 
   async function loadStockFromDB() {
-    if (!supabase) return [];
+    if (!sbClient) return [];
     try {
-      const { data, error } = await supabase.from('stock').select('*');
+      const { data, error } = await sbClient.from('stock').select('*');
       if (error) throw error;
       return data || [];
     } catch(e) {
@@ -1355,6 +1355,19 @@
     return stores;
   }
 
+  // 지역별 기본 좌표 (좌표 없는 매장용)
+  var regionCoords = {
+    '서울': {lat: 37.5665, lng: 126.9780}, '경기': {lat: 37.2636, lng: 127.0286},
+    '부산': {lat: 35.1796, lng: 129.0756}, '대구': {lat: 35.8714, lng: 128.6014},
+    '인천': {lat: 37.4563, lng: 126.7052}, '광주': {lat: 35.1595, lng: 126.8526},
+    '대전': {lat: 36.3504, lng: 127.3845}, '울산': {lat: 35.5384, lng: 129.3114},
+    '전북': {lat: 35.8242, lng: 127.1480}, '제주': {lat: 33.4996, lng: 126.5312},
+    '강원': {lat: 37.8228, lng: 128.1555}, '충북': {lat: 36.6357, lng: 127.4913},
+    '충남': {lat: 36.6588, lng: 126.6728}, '전남': {lat: 34.8161, lng: 126.4629},
+    '경북': {lat: 36.4919, lng: 128.8889}, '경남': {lat: 35.4606, lng: 128.2132},
+    '세종': {lat: 36.4800, lng: 127.2612}
+  };
+
   // localStorage 커스텀 매장 로드 (Supabase 없어도 작동)
   function loadLocalCustomStores() {
     try {
@@ -1363,16 +1376,32 @@
       var customStores = JSON.parse(raw || '[]');
       console.log('[지도] 파싱된 커스텀 매장 수:', customStores.length);
       var added = 0;
+      var fixed = 0;
       customStores.forEach(function(s) {
         if (!stores.some(function(h) { return h.id === s.id; })) {
+          var lat = parseFloat(s.lat);
+          var lng = parseFloat(s.lng);
+
+          // 좌표가 없으면 지역 기반으로 자동 생성
+          if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+            var rc = regionCoords[s.region] || regionCoords['서울'];
+            lat = rc.lat + (Math.random() - 0.5) * 0.02;
+            lng = rc.lng + (Math.random() - 0.5) * 0.02;
+            // localStorage도 업데이트 (다음번엔 바로 표시)
+            s.lat = lat;
+            s.lng = lng;
+            fixed++;
+            console.log('[지도] 좌표 자동생성:', s.name, '→', lat, lng);
+          }
+
           var mappedStore = {
             id: s.id,
             name: s.name || 'Unknown',
             addr: s.addr || '',
             region: s.region || '기타',
             area: s.area || s.region || '기타',
-            lat: parseFloat(s.lat),
-            lng: parseFloat(s.lng),
+            lat: lat,
+            lng: lng,
             type: s.type || '카페',
             menu: s.menu || '버터떡',
             price: s.price || '문의',
@@ -1381,15 +1410,15 @@
             updated: '방금 전',
             isFromLocal: true
           };
-          console.log('[지도] 커스텀 매장:', s.name, 'lat:', mappedStore.lat, 'lng:', mappedStore.lng, 'valid:', !isNaN(mappedStore.lat) && !isNaN(mappedStore.lng));
-          if (mappedStore.lat && mappedStore.lng && !isNaN(mappedStore.lat) && !isNaN(mappedStore.lng)) {
-            stores.push(mappedStore);
-            added++;
-          } else {
-            console.warn('[지도] 좌표 없어서 스킵:', s.name, s.lat, s.lng);
-          }
+          stores.push(mappedStore);
+          added++;
         }
       });
+      // 좌표가 수정된 게 있으면 localStorage 업데이트
+      if (fixed > 0) {
+        localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
+        console.log('[지도] ' + fixed + '개 매장 좌표 자동생성 후 localStorage 업데이트');
+      }
       if (added > 0) console.log('[지도] localStorage에서 ' + added + '개의 커스텀 매장 추가됨. 총 stores:', stores.length);
       else console.log('[지도] 추가된 커스텀 매장 없음');
     } catch(e) {
@@ -1453,7 +1482,7 @@
 
     // 2단계: Supabase를 비동기로 로드 후 추가 매장 합치기 (지도는 이미 떠 있음)
     loadSupabaseSDK().then(function() {
-      if (supabase) {
+      if (sbClient) {
         mergeSupabaseStores().then(function() {
           console.log('Supabase 데이터 합치기 완료');
           // Supabase 로드 후에도 커스텀 매장 마커 재확인
