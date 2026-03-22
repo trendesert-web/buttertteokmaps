@@ -1192,7 +1192,7 @@
 </div>
 
 <!-- Naver Map SDK -->
-<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304"></script>
+<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304&submodules=geocoder"></script>
 
 <script>
   // ============================================
@@ -1469,50 +1469,40 @@
     return Math.abs(lat - rc.lat) < 0.02 && Math.abs(lng - rc.lng) < 0.02;
   }
 
-  // 카카오 지오코딩으로 커스텀 매장 좌표 자동 보정
+  // 네이버 Geocoder로 커스텀 매장 좌표 자동 보정 (이미 로드된 API 사용)
   function geocodeCustomStores() {
     var storesNeedingGeocode = stores.filter(function(s) { return s.needsGeocode && s.addr; });
     if (storesNeedingGeocode.length === 0) return;
+    if (typeof naver === 'undefined' || !naver.maps || !naver.maps.Service) {
+      console.warn('[지오코딩] 네이버 Geocoder 미로드');
+      return;
+    }
 
-    // 카카오 Maps SDK 로드
-    var script = document.createElement('script');
-    script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services&autoload=false';
-    script.onload = function() {
-      kakao.maps.load(function() {
-        var geocoder = new kakao.maps.services.Geocoder();
-        var places = new kakao.maps.services.Places();
-        var updated = false;
-        var pending = storesNeedingGeocode.length;
+    console.log('[지오코딩] ' + storesNeedingGeocode.length + '개 매장 좌표 보정 시작');
+    var updated = false;
+    var pending = storesNeedingGeocode.length;
 
-        storesNeedingGeocode.forEach(function(store) {
-          // 1차: 주소 검색
-          geocoder.addressSearch(store.addr, function(result, status) {
-            if (status === kakao.maps.services.Status.OK && result.length > 0) {
-              var newLat = parseFloat(result[0].y);
-              var newLng = parseFloat(result[0].x);
+    storesNeedingGeocode.forEach(function(store) {
+      naver.maps.Service.geocode({ query: store.addr }, function(status, response) {
+        if (status === naver.maps.Service.Status.OK) {
+          var items = response.v2.addresses;
+          if (items && items.length > 0) {
+            var newLat = parseFloat(items[0].y);
+            var newLng = parseFloat(items[0].x);
+            if (!isNaN(newLat) && !isNaN(newLng)) {
               applyGeocode(store, newLat, newLng);
               updated = true;
-            } else {
-              // 2차: 키워드 검색
-              places.keywordSearch(store.addr, function(result2, status2) {
-                if (status2 === kakao.maps.services.Status.OK && result2.length > 0) {
-                  var newLat = parseFloat(result2[0].y);
-                  var newLng = parseFloat(result2[0].x);
-                  applyGeocode(store, newLat, newLng);
-                  updated = true;
-                }
-                pending--;
-                if (pending <= 0 && updated) saveGeocodedStores();
-              });
-              return;
             }
-            pending--;
-            if (pending <= 0 && updated) saveGeocodedStores();
-          });
-        });
+          } else {
+            console.warn('[지오코딩] 결과없음:', store.name, store.addr);
+          }
+        } else {
+          console.warn('[지오코딩] 실패:', store.name, status);
+        }
+        pending--;
+        if (pending <= 0 && updated) saveGeocodedStores();
       });
-    };
-    document.head.appendChild(script);
+    });
   }
 
   function applyGeocode(store, newLat, newLng) {

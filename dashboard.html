@@ -2159,7 +2159,8 @@
     </div>
 
     <!-- Kakao Maps SDK for Place Search -->
-    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c8bac9e41374ae0bfbffbef06cd2407b&libraries=services"></script>
+    <!-- 네이버 Geocoder (주소→좌표 변환) -->
+    <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304&submodules=geocoder"></script>
     <!-- Daum Postcode (주소 검색 - API키 불필요, 100% 작동) -->
     <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
@@ -3826,33 +3827,23 @@
         function geocodeAddress(address) {
             return new Promise(function(resolve) {
                 try {
-                    if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
-                        var geocoder = new kakao.maps.services.Geocoder();
-                        geocoder.addressSearch(address, function(result, status) {
-                            if (status === kakao.maps.services.Status.OK && result.length > 0) {
-                                var lat = parseFloat(result[0].y);
-                                var lng = parseFloat(result[0].x);
-                                console.log('[지오코딩] 성공:', address, '→', lat, lng);
-                                resolve({ lat: lat, lng: lng });
-                            } else {
-                                console.warn('[지오코딩] 결과 없음, 키워드 검색 시도:', address);
-                                // 주소 검색 실패 시 키워드(장소) 검색 시도
-                                var ps = new kakao.maps.services.Places();
-                                ps.keywordSearch(address, function(data, status2) {
-                                    if (status2 === kakao.maps.services.Status.OK && data.length > 0) {
-                                        var lat2 = parseFloat(data[0].y);
-                                        var lng2 = parseFloat(data[0].x);
-                                        console.log('[지오코딩] 키워드 검색 성공:', address, '→', lat2, lng2);
-                                        resolve({ lat: lat2, lng: lng2 });
-                                    } else {
-                                        console.warn('[지오코딩] 키워드 검색도 실패');
-                                        resolve(null);
-                                    }
-                                });
+                    if (typeof naver !== 'undefined' && naver.maps && naver.maps.Service) {
+                        naver.maps.Service.geocode({ query: address }, function(status, response) {
+                            if (status === naver.maps.Service.Status.OK) {
+                                var items = response.v2.addresses;
+                                if (items && items.length > 0) {
+                                    var lat = parseFloat(items[0].y);
+                                    var lng = parseFloat(items[0].x);
+                                    console.log('[지오코딩] 네이버 성공:', address, '→', lat, lng);
+                                    resolve({ lat: lat, lng: lng });
+                                    return;
+                                }
                             }
+                            console.warn('[지오코딩] 네이버 결과없음:', address);
+                            resolve(null);
                         });
                     } else {
-                        console.warn('[지오코딩] 카카오 SDK 미로드');
+                        console.warn('[지오코딩] 네이버 Geocoder 미로드');
                         resolve(null);
                     }
                 } catch(e) {
