@@ -898,6 +898,7 @@
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <!-- LOGIN SCREEN -->
@@ -1137,6 +1138,11 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_BPaOl0_ZZKvgEBDBCoO6mQ_QGKt81Dd';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         // ===== GLOBAL STATE =====
         let isAdminLoggedIn = false;
         let currentEditStoreId = null;
@@ -1144,6 +1150,7 @@
         let allStoresData = [];
         let customStoresData = [];
         let sanctionsData = [];
+        let allStoresDisplay = [];
 
         // 42 stores data
         const allStores = [
@@ -1236,18 +1243,32 @@
         }
 
         // ===== AUTHENTICATION =====
-        function initializeAuth() {
-            const hasPassword = localStorage.getItem('buttertteokmapAdminPass');
-            if (!hasPassword) {
-                document.getElementById('setupMode').style.display = 'block';
-                document.getElementById('loginMode').style.display = 'none';
-            } else {
-                document.getElementById('setupMode').style.display = 'none';
-                document.getElementById('loginMode').style.display = 'block';
+        async function initializeAuth() {
+            try {
+                const { data, error } = await supabase.from('admin_settings').select('setting_value').eq('setting_key', 'admin_password').single();
+
+                if (!error && data) {
+                    document.getElementById('setupMode').style.display = 'none';
+                    document.getElementById('loginMode').style.display = 'block';
+                } else {
+                    document.getElementById('setupMode').style.display = 'block';
+                    document.getElementById('loginMode').style.display = 'none';
+                }
+            } catch (e) {
+                console.warn('Supabase 비밀번호 확인 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                const hasPassword = localStorage.getItem('buttertteokmapAdminPass');
+                if (!hasPassword) {
+                    document.getElementById('setupMode').style.display = 'block';
+                    document.getElementById('loginMode').style.display = 'none';
+                } else {
+                    document.getElementById('setupMode').style.display = 'none';
+                    document.getElementById('loginMode').style.display = 'block';
+                }
             }
         }
 
-        function handleSetupPassword() {
+        async function handleSetupPassword() {
             const pass1 = document.getElementById('setupPass1').value;
             const pass2 = document.getElementById('setupPass2').value;
 
@@ -1266,29 +1287,58 @@
                 return;
             }
 
-            localStorage.setItem('buttertteokmapAdminPass', btoa(pass1));
-            isAdminLoggedIn = true;
-            showLoginSuccess();
-            showToast('관리자 비밀번호가 설정되었습니다.', 'success');
+            try {
+                const { error } = await supabase.from('admin_settings').upsert(
+                    { setting_key: 'admin_password', setting_value: btoa(pass1) },
+                    { onConflict: 'setting_key' }
+                );
+                if (error) throw error;
+
+                isAdminLoggedIn = true;
+                showLoginSuccess();
+                showToast('관리자 비밀번호가 설정되었습니다.', 'success');
+            } catch (e) {
+                console.warn('Supabase 저장 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                localStorage.setItem('buttertteokmapAdminPass', btoa(pass1));
+                isAdminLoggedIn = true;
+                showLoginSuccess();
+                showToast('관리자 비밀번호가 설정되었습니다.', 'success');
+            }
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             const password = document.getElementById('adminPassword').value;
-            const storedPassword = localStorage.getItem('buttertteokmapAdminPass');
 
             if (!password) {
                 showError('비밀번호를 입력해주세요.');
                 return;
             }
 
-            if (btoa(password) !== storedPassword) {
-                showError('비밀번호가 일치하지 않습니다.');
-                return;
-            }
+            try {
+                const { data, error } = await supabase.from('admin_settings')
+                    .select('setting_value').eq('setting_key', 'admin_password').single();
 
-            isAdminLoggedIn = true;
-            showLoginSuccess();
+                if (error) throw error;
+
+                if (data && btoa(password) === data.setting_value) {
+                    isAdminLoggedIn = true;
+                    showLoginSuccess();
+                } else {
+                    showError('비밀번호가 일치하지 않습니다.');
+                }
+            } catch (e) {
+                console.warn('Supabase 확인 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                const storedPassword = localStorage.getItem('buttertteokmapAdminPass');
+                if (btoa(password) !== storedPassword) {
+                    showError('비밀번호가 일치하지 않습니다.');
+                    return;
+                }
+                isAdminLoggedIn = true;
+                showLoginSuccess();
+            }
         }
 
         function showError(message) {
@@ -1297,10 +1347,10 @@
             errorEl.style.display = 'block';
         }
 
-        function showLoginSuccess() {
+        async function showLoginSuccess() {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('adminDashboard').classList.add('active');
-            loadAllData();
+            await loadAllData();
             renderStores();
         }
 
@@ -1313,10 +1363,30 @@
         }
 
         // ===== DATA MANAGEMENT =====
-        function loadAllData() {
-            allStoresData = [...allStores];
-            customStoresData = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
-            sanctionsData = JSON.parse(localStorage.getItem('buttertteokmapSanctions') || '[]');
+        async function loadAllData() {
+            try {
+                // Load stores from Supabase
+                const { data: stores, error: storesError } = await supabase.from('stores').select('*').order('id');
+                if (storesError) throw storesError;
+
+                // Separate default and custom stores
+                allStoresData = stores?.filter(s => !s.is_custom) || [...allStores];
+                customStoresData = stores?.filter(s => s.is_custom) || [];
+
+                // Load sanctions from Supabase
+                const { data: sanctions, error: sanctionsError } = await supabase.from('sanctions').select('*').order('created_at', { ascending: false });
+                if (sanctionsError) throw sanctionsError;
+                sanctionsData = sanctions || [];
+
+                allStoresDisplay = [...allStoresData, ...customStoresData];
+            } catch (e) {
+                console.warn('Supabase 로드 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage and hardcoded data
+                allStoresData = [...allStores];
+                customStoresData = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+                sanctionsData = JSON.parse(localStorage.getItem('buttertteokmapSanctions') || '[]');
+                allStoresDisplay = [...allStoresData, ...customStoresData];
+            }
         }
 
         function getStoreById(id) {
@@ -1324,17 +1394,38 @@
         }
 
         function isStoreBanned(id) {
+            const store = allStoresDisplay.find(s => s.id === id);
+            if (store && store.is_banned !== undefined) {
+                return store.is_banned;
+            }
+            // Fallback to localStorage
             return localStorage.getItem(`buttertteokmapStoreBanned_${id}`) === 'true';
         }
 
-        function toggleStoreBan(id) {
+        async function toggleStoreBan(id) {
             const isBanned = isStoreBanned(id);
-            if (isBanned) {
-                localStorage.removeItem(`buttertteokmapStoreBanned_${id}`);
-                showToast('매장이 복원되었습니다.', 'success');
-            } else {
-                localStorage.setItem(`buttertteokmapStoreBanned_${id}`, 'true');
-                showToast('매장이 정지되었습니다.', 'success');
+            const newBanStatus = !isBanned;
+
+            try {
+                const { error } = await supabase.from('stores').update({ is_banned: newBanStatus }).eq('id', id);
+                if (error) throw error;
+
+                const store = allStoresDisplay.find(s => s.id === id);
+                if (store) {
+                    store.is_banned = newBanStatus;
+                }
+
+                showToast(newBanStatus ? '매장이 정지되었습니다.' : '매장이 복원되었습니다.', 'success');
+            } catch (e) {
+                console.warn('Supabase 업데이트 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                if (isBanned) {
+                    localStorage.removeItem(`buttertteokmapStoreBanned_${id}`);
+                    showToast('매장이 복원되었습니다.', 'success');
+                } else {
+                    localStorage.setItem(`buttertteokmapStoreBanned_${id}`, 'true');
+                    showToast('매장이 정지되었습니다.', 'success');
+                }
             }
             renderStores();
         }
@@ -1343,10 +1434,21 @@
             showConfirmDialog(
                 '매장 삭제',
                 '이 커스텀 매장을 삭제하시겠습니까?',
-                () => {
-                    customStoresData = customStoresData.filter(s => s.id !== id);
-                    localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStoresData));
-                    showToast('매장이 삭제되었습니다.', 'success');
+                async () => {
+                    try {
+                        const { error } = await supabase.from('stores').delete().eq('id', id);
+                        if (error) throw error;
+
+                        customStoresData = customStoresData.filter(s => s.id !== id);
+                        allStoresDisplay = allStoresDisplay.filter(s => s.id !== id);
+                        showToast('매장이 삭제되었습니다.', 'success');
+                    } catch (e) {
+                        console.warn('Supabase 삭제 실패, 로컬스토리지 사용:', e);
+                        // Fallback to localStorage
+                        customStoresData = customStoresData.filter(s => s.id !== id);
+                        localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStoresData));
+                        showToast('매장이 삭제되었습니다.', 'success');
+                    }
                     renderStores();
                 }
             );
@@ -1545,7 +1647,7 @@
             openModal('editStoreModal');
         }
 
-        function saveStoreEdit() {
+        async function saveStoreEdit() {
             const name = document.getElementById('editStoreName').value;
             const addr = document.getElementById('editStoreAddr').value;
             const region = document.getElementById('editStoreRegion').value;
@@ -1555,22 +1657,38 @@
                 return;
             }
 
-            const store = getStoreById(currentEditStoreId);
-            if (store) {
-                store.name = name;
-                store.addr = addr;
-                store.region = region;
+            try {
+                const { error } = await supabase.from('stores').update({ name, addr, region }).eq('id', currentEditStoreId);
+                if (error) throw error;
 
-                // Save custom stores if it's custom
-                const isCustom = customStoresData.find(s => s.id === currentEditStoreId);
-                if (isCustom) {
-                    localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStoresData));
+                const store = getStoreById(currentEditStoreId);
+                if (store) {
+                    store.name = name;
+                    store.addr = addr;
+                    store.region = region;
                 }
-            }
 
-            closeModal('editStoreModal');
-            renderStores();
-            showToast('매장 정보가 수정되었습니다.', 'success');
+                closeModal('editStoreModal');
+                renderStores();
+                showToast('매장 정보가 수정되었습니다.', 'success');
+            } catch (e) {
+                console.warn('Supabase 업데이트 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                const store = getStoreById(currentEditStoreId);
+                if (store) {
+                    store.name = name;
+                    store.addr = addr;
+                    store.region = region;
+
+                    const isCustom = customStoresData.find(s => s.id === currentEditStoreId);
+                    if (isCustom) {
+                        localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStoresData));
+                    }
+                }
+                closeModal('editStoreModal');
+                renderStores();
+                showToast('매장 정보가 수정되었습니다.', 'success');
+            }
         }
 
         // ===== SANCTIONS MANAGEMENT =====
@@ -1623,7 +1741,7 @@
             openModal('addSanctionModal');
         }
 
-        function saveSanction() {
+        async function saveSanction() {
             const storeSelect = document.getElementById('sanctionStoreSelect').value;
             const reason = document.getElementById('sanctionReason').value;
 
@@ -1634,27 +1752,68 @@
 
             const [storeId, storeName] = storeSelect.split('|');
             const newSanction = {
-                id: Date.now(),
-                storeId: parseInt(storeId),
-                storeName: storeName,
+                store_id: parseInt(storeId),
+                store_name: storeName,
                 reason: reason,
-                date: new Date().toLocaleDateString('ko-KR'),
                 status: 'active'
             };
 
-            sanctionsData.push(newSanction);
-            localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
-            closeModal('addSanctionModal');
-            renderSanctions();
-            showToast('제재가 추가되었습니다.', 'success');
+            try {
+                const { data, error } = await supabase.from('sanctions').insert([newSanction]).select();
+                if (error) throw error;
+
+                if (data && data[0]) {
+                    sanctionsData.push({
+                        id: data[0].id,
+                        storeId: data[0].store_id,
+                        storeName: data[0].store_name,
+                        reason: data[0].reason,
+                        date: new Date(data[0].created_at).toLocaleDateString('ko-KR'),
+                        status: data[0].status
+                    });
+                }
+
+                closeModal('addSanctionModal');
+                renderSanctions();
+                showToast('제재가 추가되었습니다.', 'success');
+            } catch (e) {
+                console.warn('Supabase 저장 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                const newSanctionLocal = {
+                    id: Date.now(),
+                    storeId: parseInt(storeId),
+                    storeName: storeName,
+                    reason: reason,
+                    date: new Date().toLocaleDateString('ko-KR'),
+                    status: 'active'
+                };
+                sanctionsData.push(newSanctionLocal);
+                localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
+                closeModal('addSanctionModal');
+                renderSanctions();
+                showToast('제재가 추가되었습니다.', 'success');
+            }
         }
 
-        function liftSanction(idx) {
+        async function liftSanction(idx) {
             if (sanctionsData[idx]) {
-                sanctionsData[idx].status = 'lifted';
-                localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
-                renderSanctions();
-                showToast('제재가 해제되었습니다.', 'success');
+                const sanctionId = sanctionsData[idx].id;
+
+                try {
+                    const { error } = await supabase.from('sanctions').update({ status: 'lifted' }).eq('id', sanctionId);
+                    if (error) throw error;
+
+                    sanctionsData[idx].status = 'lifted';
+                    renderSanctions();
+                    showToast('제재가 해제되었습니다.', 'success');
+                } catch (e) {
+                    console.warn('Supabase 업데이트 실패, 로컬스토리지 사용:', e);
+                    // Fallback to localStorage
+                    sanctionsData[idx].status = 'lifted';
+                    localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
+                    renderSanctions();
+                    showToast('제재가 해제되었습니다.', 'success');
+                }
             }
         }
 
@@ -1662,17 +1821,30 @@
             showConfirmDialog(
                 '제재 삭제',
                 '이 제재 기록을 삭제하시겠습니까?',
-                () => {
-                    sanctionsData.splice(idx, 1);
-                    localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
-                    renderSanctions();
-                    showToast('제재가 삭제되었습니다.', 'success');
+                async () => {
+                    const sanctionId = sanctionsData[idx].id;
+
+                    try {
+                        const { error } = await supabase.from('sanctions').delete().eq('id', sanctionId);
+                        if (error) throw error;
+
+                        sanctionsData.splice(idx, 1);
+                        renderSanctions();
+                        showToast('제재가 삭제되었습니다.', 'success');
+                    } catch (e) {
+                        console.warn('Supabase 삭제 실패, 로컬스토리지 사용:', e);
+                        // Fallback to localStorage
+                        sanctionsData.splice(idx, 1);
+                        localStorage.setItem('buttertteokmapSanctions', JSON.stringify(sanctionsData));
+                        renderSanctions();
+                        showToast('제재가 삭제되었습니다.', 'success');
+                    }
                 }
             );
         }
 
         // ===== STATISTICS =====
-        function renderStatistics() {
+        async function renderStatistics() {
             const allStoresDisplay = [...allStoresData, ...customStoresData];
 
             // Update stat cards
@@ -1685,12 +1857,20 @@
             });
             document.getElementById('statBannedStores').textContent = bannedCount;
 
-            // Count coupons
+            // Count coupons from Supabase
             let couponCount = 0;
-            allStoresDisplay.forEach(store => {
-                const coupons = JSON.parse(localStorage.getItem(`buttertteokmapCoupons_${store.id}`) || '[]');
-                couponCount += coupons.length;
-            });
+            try {
+                const { data: coupons, error } = await supabase.from('coupons').select('id', { count: 'exact' });
+                if (error) throw error;
+                couponCount = coupons?.length || 0;
+            } catch (e) {
+                console.warn('Supabase 쿠폰 조회 실패, 로컬스토리지 사용:', e);
+                // Fallback to localStorage
+                allStoresDisplay.forEach(store => {
+                    const coupons = JSON.parse(localStorage.getItem(`buttertteokmapCoupons_${store.id}`) || '[]');
+                    couponCount += coupons.length;
+                });
+            }
             document.getElementById('statCoupons').textContent = couponCount;
 
             // Render region chart

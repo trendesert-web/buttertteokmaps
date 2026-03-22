@@ -1166,10 +1166,18 @@
 
 <!-- Naver Map SDK -->
 <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
   // ============================================
-  // STORE DATA (42 stores)
+  // SUPABASE CONFIGURATION
+  // ============================================
+  const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_BPaOl0_ZZKvgEBDBCoO6mQ_QGKt81Dd';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ============================================
+  // STORE DATA (42 stores - fallback)
   // ============================================
   const stores = [
     { id: 1, name: "이웃집통통이 압구정점", addr: "서울 강남구 선릉로161길 19", region: "서울", area: "압구정", lat: 37.5275, lng: 127.0310, type: "베이커리", menu: "글루텐프리 버터떡", price: "6개입 세트", status: "available", stock: 120, updated: "10분 전" },
@@ -1220,12 +1228,89 @@
   let markers = {};
   let selectedStore = null;
   let userLocation = null;
+  let supabaseStocks = {};
+
+  // ============================================
+  // SUPABASE DATA LOADING
+  // ============================================
+  async function loadStoresFromDB() {
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('is_banned', false)
+        .order('id');
+      if (error) throw error;
+      return data || [];
+    } catch(e) {
+      console.warn('Supabase 스토어 데이터 연결 실패:', e);
+      return [];
+    }
+  }
+
+  async function loadStockFromDB() {
+    try {
+      const { data, error } = await supabase.from('stock').select('*');
+      if (error) throw error;
+      return data || [];
+    } catch(e) {
+      console.warn('Supabase 재고 데이터 연결 실패:', e);
+      return [];
+    }
+  }
+
+  async function mergeSupabaseStores() {
+    // Load stores from Supabase
+    const supabaseStores = await loadStoresFromDB();
+    const stockData = await loadStockFromDB();
+
+    // Build stock lookup map
+    supabaseStocks = {};
+    stockData.forEach(stock => {
+      if (stock.store_id) {
+        supabaseStocks[stock.store_id] = stock;
+      }
+    });
+
+    // Filter stores that have valid lat/lng
+    const newStores = supabaseStores.filter(s => s.lat && s.lng && s.lat > 0 && s.lng > 0);
+
+    // Merge with existing stores (keep hardcoded stores, add new ones from Supabase)
+    newStores.forEach(supabaseStore => {
+      const existsInHardcoded = stores.some(s => s.id === supabaseStore.id);
+      if (!existsInHardcoded) {
+        // Map Supabase fields to our format
+        const mappedStore = {
+          id: supabaseStore.id,
+          name: supabaseStore.name || 'Unknown Store',
+          addr: supabaseStore.address || supabaseStore.addr || '',
+          region: supabaseStore.region || '기타',
+          area: supabaseStore.area || '기타',
+          lat: parseFloat(supabaseStore.lat),
+          lng: parseFloat(supabaseStore.lng),
+          type: supabaseStore.type || '카페',
+          menu: supabaseStore.menu || '버터떡',
+          price: supabaseStore.price || '개당 가격',
+          status: 'available',
+          stock: 999,
+          updated: '방금 전',
+          isFromSupabase: true
+        };
+        stores.push(mappedStore);
+      }
+    });
+
+    console.log(`Supabase에서 ${newStores.length}개의 새로운 매장 로드됨. 총 ${stores.length}개 매장 표시`);
+    return stores;
+  }
 
   // ============================================
   // INITIALIZATION
   // ============================================
   document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(initMap, 500);
+    mergeSupabaseStores().then(() => {
+      setTimeout(initMap, 500);
+    });
   });
 
   function initMap() {
@@ -1437,8 +1522,25 @@
 
   function openStore(store) {
     selectedStore = store;
-    const statusClass = store.status;
-    const statusLabel = store.status === "available" ? "✓ 재고 충분" : store.status === "low" ? "⚠ 품절 임박" : "✕ 품절";
+
+    // Determine status from Supabase if available, otherwise use hardcoded status
+    let statusClass = store.status;
+    let statusLabel = store.status === "available" ? "✓ 재고 충분" : store.status === "low" ? "⚠ 품절 임박" : "✕ 품절";
+
+    // Check if there's Supabase stock data for this store
+    if (store.isFromSupabase && supabaseStocks[store.id]) {
+      const stockData = supabaseStocks[store.id];
+      if (stockData.quantity > 0) {
+        statusClass = "available";
+        statusLabel = "재고 있음 ✅";
+      } else {
+        statusClass = "soldout";
+        statusLabel = "품절 ❌";
+      }
+    } else if (store.isFromSupabase) {
+      statusLabel = "정보 없음";
+      statusClass = "available";
+    }
 
     document.getElementById("sheetIcon").className = `sheet-icon ${statusClass}`;
     document.getElementById("sheetIcon").textContent = "🧈";

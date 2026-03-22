@@ -1984,6 +1984,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
         // Firebase Configuration
         const firebaseConfig = {
@@ -1998,6 +2001,11 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://trbiaigmvpqfvvifwadu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_BPaOl0_ZZKvgEBDBCoO6mQ_QGKt81Dd';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentStatus = 'available';
         let isGuestMode = false;
@@ -2057,6 +2065,109 @@
             { id: 41, name: "전주 전주로 버터떡", addr: "전북 전주시 완산구 전주로 45", region: "전북", area: "전주로" },
             { id: 42, name: "전주 한옥마을 카페", addr: "전북 전주시 완산구 기린대로 111", region: "전북", area: "한옥마을" }
         ];
+
+        // Load stores from Supabase with fallback to localStorage
+        async function loadStoresFromDB() {
+            try {
+                const { data, error } = await supabase.from('stores').select('*').order('id');
+                if (error) throw error;
+                if (data && data.length > 0) {
+                    allStores = data.map(s => ({
+                        id: s.id,
+                        name: s.name,
+                        addr: s.addr,
+                        region: s.region,
+                        area: s.area,
+                        storeType: s.store_type,
+                        menu: s.menu,
+                        price: s.price,
+                        phone: s.phone,
+                        lat: s.lat,
+                        lng: s.lng,
+                        isDefault: s.is_default,
+                        isBanned: s.is_banned
+                    }));
+                    console.log('Loaded stores from Supabase:', allStores.length);
+                }
+            } catch(e) {
+                console.warn('Supabase 연결 실패, 로컬 데이터 사용:', e);
+                // Fallback to localStorage custom stores
+            }
+        }
+
+        // Load stock from Supabase
+        async function loadStockFromDB(storeId) {
+            try {
+                const { data, error } = await supabase.from('stock').select('stock_count, updated_at').eq('store_id', storeId).single();
+                if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" errors
+                return data;
+            } catch(e) {
+                console.warn('Failed to load stock from Supabase:', e);
+                return null;
+            }
+        }
+
+        // Save stock to Supabase
+        async function saveStockToDB(storeId, stock) {
+            try {
+                const { error } = await supabase.from('stock').upsert({
+                    store_id: storeId,
+                    stock_count: stock,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'store_id' });
+                if (error) throw error;
+                console.log('Stock saved to Supabase');
+            } catch(e) {
+                console.warn('Failed to save stock to Supabase:', e);
+            }
+        }
+
+        // Load coupons from Supabase
+        async function loadCouponsFromDB(storeId) {
+            try {
+                const { data, error } = await supabase.from('coupons').select('*').eq('store_id', storeId);
+                if (error) throw error;
+                return data || [];
+            } catch(e) {
+                console.warn('Failed to load coupons from Supabase:', e);
+                return null;
+            }
+        }
+
+        // Save coupon to Supabase
+        async function saveCouponToDB(coupon, storeId) {
+            try {
+                const { error } = await supabase.from('coupons').insert({
+                    store_id: storeId,
+                    name: coupon.name,
+                    type: coupon.type,
+                    value: coupon.value,
+                    quantity: coupon.quantity,
+                    used: coupon.used,
+                    code: coupon.code,
+                    expiry: coupon.expiry,
+                    min_order: coupon.minOrder,
+                    description: coupon.desc,
+                    created_at: coupon.createdAt,
+                    active: coupon.active
+                });
+                if (error) throw error;
+                console.log('Coupon saved to Supabase');
+            } catch(e) {
+                console.warn('Failed to save coupon to Supabase:', e);
+            }
+        }
+
+        // Delete coupon from Supabase
+        async function deleteCouponFromDB(couponId) {
+            try {
+                const { error } = await supabase.from('coupons').delete().eq('id', couponId);
+                if (error) throw error;
+                console.log('Coupon deleted from Supabase');
+            } catch(e) {
+                console.warn('Failed to delete coupon from Supabase:', e);
+            }
+        }
 
         // Check if user is in guest mode
         function checkGuestMode() {
@@ -2231,8 +2342,10 @@
             });
         }
 
-        // Initialize from localStorage
-        function initializeDashboard() {
+        // Initialize from Supabase/localStorage
+        async function initializeDashboard() {
+            // Load stores from Supabase first
+            await loadStoresFromDB();
             loadCustomStores();
             // Check if a store is already selected
             const savedStoreId = getSelectedStoreId();
@@ -2292,7 +2405,7 @@
             display.textContent = value;
         }
 
-        function updateStock() {
+        async function updateStock() {
             const stockVal = document.getElementById('stockInput').value.trim();
             const stock = parseInt(stockVal);
 
@@ -2301,9 +2414,13 @@
                 return;
             }
 
-            // Save to localStorage
-            localStorage.setItem('buttertteokmapStock_' + (selectedStoreId || '1'), stock);
-            localStorage.setItem('buttertteokmapStatus_' + (selectedStoreId || '1'), currentStatus);
+            // Save to Supabase first, fallback to localStorage
+            const storeId = selectedStoreId || '1';
+            await saveStockToDB(storeId, stock);
+
+            // Also save to localStorage as backup
+            localStorage.setItem('buttertteokmapStock_' + storeId, stock);
+            localStorage.setItem('buttertteokmapStatus_' + storeId, currentStatus);
 
             const now = new Date();
             const timeString = now.toLocaleString('ko-KR', {
@@ -2433,15 +2550,29 @@
             document.getElementById('descCount').textContent = textarea.value.length;
         }
 
-        function saveStoreInfo() {
+        async function saveStoreInfo() {
             const area = document.getElementById('imageUploadArea');
             const imgEl = area.querySelector('img');
             const desc = document.getElementById('storeDescInput').value.trim();
+            const storeId = selectedStoreId || '1';
 
-            // Save image
+            // Save store info to Supabase
+            try {
+                const { error } = await supabase.from('store_info').upsert({
+                    store_id: storeId,
+                    description: desc || null,
+                    image_url: (imgEl && imgEl.src) ? imgEl.src : null,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'store_id' });
+                if (error) throw error;
+            } catch (e) {
+                console.warn('Failed to save store info to Supabase:', e);
+            }
+
+            // Also save to localStorage as backup
             if (imgEl && imgEl.src) {
                 try {
-                    localStorage.setItem('buttertteokmapStoreImage_' + (selectedStoreId || '1'), imgEl.src);
+                    localStorage.setItem('buttertteokmapStoreImage_' + storeId, imgEl.src);
                 } catch (e) {
                     console.warn('Image too large for localStorage:', e);
                     showToast('이미지 용량이 너무 큽니다. 더 작은 이미지를 사용해주세요.');
@@ -2449,11 +2580,10 @@
                 }
             }
 
-            // Save description
             if (desc) {
-                localStorage.setItem('buttertteokmapStoreDesc_' + (selectedStoreId || '1'), desc);
+                localStorage.setItem('buttertteokmapStoreDesc_' + storeId, desc);
             } else {
-                localStorage.removeItem('buttertteokmapStoreDesc_' + (selectedStoreId || '1'));
+                localStorage.removeItem('buttertteokmapStoreDesc_' + storeId);
             }
 
             showToast('매장 정보가 저장되었습니다!');
@@ -2541,7 +2671,7 @@
             localStorage.setItem('buttertteokmapGlobalCoupons', JSON.stringify(globalCoupons));
         }
 
-        function issueCoupon() {
+        async function issueCoupon() {
             const name = document.getElementById('cpnName').value.trim();
             const value = parseInt(document.getElementById('cpnValue').value);
             const quantity = parseInt(document.getElementById('cpnQuantity').value);
@@ -2581,6 +2711,10 @@
                 active: true
             };
 
+            // Save to Supabase first
+            await saveCouponToDB(newCoupon, selectedStoreId || '1');
+
+            // Also save to localStorage
             existing.push(newCoupon);
             saveStoreCoupons(existing);
 
@@ -2593,16 +2727,21 @@
             document.getElementById('cpnMinOrder').value = '';
             document.getElementById('cpnDesc').value = '';
 
-            renderIssuedCoupons();
+            await renderIssuedCoupons();
             showToast('쿠폰이 발행되었습니다! 코드: ' + code);
         }
 
-        function deleteCoupon(couponId) {
+        async function deleteCoupon(couponId) {
             if (!confirm('이 쿠폰을 삭제하시겠습니까?')) return;
+
+            // Delete from Supabase
+            await deleteCouponFromDB(couponId);
+
+            // Also delete from localStorage
             let coupons = getStoreCoupons();
             coupons = coupons.filter(c => c.id !== couponId);
             saveStoreCoupons(coupons);
-            renderIssuedCoupons();
+            await renderIssuedCoupons();
             showToast('쿠폰이 삭제되었습니다.');
         }
 
@@ -2628,8 +2767,15 @@
             return coupon.value;
         }
 
-        function renderIssuedCoupons() {
-            const coupons = getStoreCoupons();
+        async function renderIssuedCoupons() {
+            // Try to load from Supabase first
+            let coupons = await loadCouponsFromDB(selectedStoreId || '1');
+
+            // Fallback to localStorage if Supabase fails
+            if (coupons === null) {
+                coupons = getStoreCoupons();
+            }
+
             const container = document.getElementById('issuedCouponList');
             const today = new Date().toISOString().split('T')[0];
 
@@ -2643,7 +2789,7 @@
                 return;
             }
 
-            container.innerHTML = coupons.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(c => {
+            container.innerHTML = coupons.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt)).map(c => {
                 const isExpired = c.expiry < today;
                 const remaining = c.quantity - (c.used || 0);
                 return `
@@ -2655,7 +2801,7 @@
                                 <span>잔여 ${remaining}/${c.quantity}장</span>
                                 <span>사용 ${c.used || 0}장</span>
                                 <span>~${c.expiry}${isExpired ? ' (만료)' : ''}</span>
-                                ${c.minOrder > 0 ? '<span>' + c.minOrder.toLocaleString() + '원 이상</span>' : ''}
+                                ${c.min_order ? '<span>' + (c.min_order || c.minOrder).toLocaleString() + '원 이상</span>' : ''}
                             </div>
                         </div>
                         <div class="issued-coupon-actions">
@@ -2917,8 +3063,23 @@
 
         let _pendingStoreId = null;
 
-        function selectStore(storeId) {
-            const savedPass = localStorage.getItem('buttertteokmapStorePass_' + storeId);
+        async function selectStore(storeId) {
+            // Try to get password from Supabase first
+            let savedPass = null;
+            try {
+                const { data, error } = await supabase.from('stores').select('password_hash').eq('id', storeId).single();
+                if (data && !error) {
+                    savedPass = data.password_hash;
+                }
+            } catch(e) {
+                console.warn('Failed to load password from Supabase:', e);
+            }
+
+            // Fallback to localStorage
+            if (!savedPass) {
+                savedPass = localStorage.getItem('buttertteokmapStorePass_' + storeId);
+            }
+
             if (savedPass) {
                 _pendingStoreId = storeId;
                 const modal = document.getElementById('passwordModal');
@@ -2931,11 +3092,27 @@
             completeStoreSelection(storeId);
         }
 
-        function confirmPasswordModal() {
+        async function confirmPasswordModal() {
             const input = document.getElementById('passwordModalInput');
             const pass = input.value;
             if (!pass) { input.style.borderColor = '#F44336'; return; }
-            const savedPass = localStorage.getItem('buttertteokmapStorePass_' + _pendingStoreId);
+
+            // Try to get password from Supabase first
+            let savedPass = null;
+            try {
+                const { data, error } = await supabase.from('stores').select('password_hash').eq('id', _pendingStoreId).single();
+                if (data && !error) {
+                    savedPass = data.password_hash;
+                }
+            } catch(e) {
+                console.warn('Failed to load password from Supabase:', e);
+            }
+
+            // Fallback to localStorage
+            if (!savedPass) {
+                savedPass = localStorage.getItem('buttertteokmapStorePass_' + _pendingStoreId);
+            }
+
             if (btoa(pass) !== savedPass) {
                 showToast('비밀번호가 틀렸습니다.');
                 input.value = '';
@@ -2953,10 +3130,10 @@
             _pendingStoreId = null;
         }
 
-        function completeStoreSelection(storeId) {
+        async function completeStoreSelection(storeId) {
             setSelectedStoreId(storeId);
             hideStoreSelector();
-            applySelectedStore();
+            await applySelectedStore();
             const store = getStoreById(storeId);
             showToast((store ? store.name : '매장') + ' 선택 완료!');
         }
@@ -3048,7 +3225,7 @@
             showToast('매장 정보를 확인 후 등록해주세요!');
         }
 
-        function applySelectedStore() {
+        async function applySelectedStore() {
             const store = getStoreById(selectedStoreId);
             if (!store) return;
             document.getElementById('storeName').textContent = store.name;
@@ -3067,15 +3244,23 @@
                 detailDiv.style.display = hasDetail ? 'block' : 'none';
             }
             // Load store-specific data
-            loadStoreData();
+            await loadStoreData();
         }
 
-        function loadStoreData() {
+        async function loadStoreData() {
             if (!selectedStoreId) return;
             const sid = selectedStoreId;
 
-            // Load stock
-            const savedStock = localStorage.getItem('buttertteokmapStock_' + sid);
+            // Load stock from Supabase first
+            let stockData = await loadStockFromDB(sid);
+            let savedStock = null;
+            if (stockData) {
+                savedStock = stockData.stock_count;
+            } else {
+                // Fallback to localStorage
+                savedStock = localStorage.getItem('buttertteokmapStock_' + sid);
+            }
+
             const savedStatus = localStorage.getItem('buttertteokmapStatus_' + sid);
             const savedLastUpdated = localStorage.getItem('buttertteokmapLastUpdated_' + sid);
 
@@ -3106,7 +3291,7 @@
             loadCustomMenus();
 
             // Load coupons
-            renderIssuedCoupons();
+            await renderIssuedCoupons();
         }
 
         // ============================================
@@ -3344,7 +3529,7 @@
             if (headerP) headerP.textContent = '운영하시는 매장을 검색하거나 새로 등록하세요';
         }
 
-        function registerNewStore() {
+        async function registerNewStore() {
             const name = document.getElementById('regStoreName').value.trim();
             const addr = document.getElementById('regStoreAddr').value.trim();
             const region = document.getElementById('regStoreRegion').value.trim();
@@ -3394,10 +3579,34 @@
                 registeredBy: currentUser ? (currentUser.email || currentUser.displayName || 'unknown') : 'guest'
             };
 
-            // Save password separately (hashed with simple btoa)
+            // Save to Supabase
+            try {
+                const { data, error } = await supabase.from('stores').insert({
+                    id: newId,
+                    name: name,
+                    addr: addr,
+                    region: region,
+                    area: region,
+                    store_type: storeType,
+                    menu: menu || '버터떡',
+                    price: price || '문의',
+                    phone: phone || '',
+                    lat: (selectedNaverPlace && selectedNaverPlace.lat) || null,
+                    lng: (selectedNaverPlace && selectedNaverPlace.lng) || null,
+                    password_hash: btoa(password),
+                    is_default: false,
+                    is_banned: false
+                }).select().single();
+                if (error) throw error;
+                console.log('Store saved to Supabase');
+            } catch(e) {
+                console.warn('Failed to save store to Supabase:', e);
+            }
+
+            // Save password separately (hashed with simple btoa) - also to localStorage
             localStorage.setItem('buttertteokmapStorePass_' + newId, btoa(password));
 
-            // Save
+            // Save to localStorage
             customStores.push(newStore);
             localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(customStores));
 
@@ -3420,7 +3629,7 @@
             // Select this store (bypass password since just registered)
             setSelectedStoreId(newId);
             hideStoreSelector();
-            applySelectedStore();
+            await applySelectedStore();
             showToast(name + ' 매장이 등록되었습니다!');
 
             // Reset form
