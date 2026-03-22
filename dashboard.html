@@ -740,6 +740,11 @@
             }
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
         /* Responsive Design */
         @media (max-width: 480px) {
             header {
@@ -1779,6 +1784,7 @@
                 </div>
             </div>
             <div class="header-right">
+                <div id="syncBadge" onclick="processSyncQueue()" style="display:none; align-items:center; justify-content:center; background:#FF9800; color:white; font-size:11px; font-weight:700; min-width:22px; height:22px; border-radius:11px; padding:0 6px; cursor:pointer; margin-right:8px; animation: pulse 2s infinite;" title="동기화 대기 중 - 클릭하여 동기화">0</div>
                 <div class="user-profile" id="userProfile">
                     <div class="profile-photo" id="profilePhoto">U</div>
                     <div class="user-info">
@@ -2072,6 +2078,101 @@
         } catch(e) { console.warn('Supabase SDK 초기화 실패:', e); }
         const supabase = sb;
 
+        // ============================================
+        // SYNC QUEUE SYSTEM (오프라인 저장 → 자동 동기화)
+        // ============================================
+        const SYNC_QUEUE_KEY = 'buttertteokmapSyncQueue';
+
+        function getSyncQueue() {
+            try { return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); }
+            catch(e) { return []; }
+        }
+
+        function saveSyncQueue(queue) {
+            localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+            updateSyncBadge();
+        }
+
+        function addToSyncQueue(operation) {
+            const queue = getSyncQueue();
+            operation.queuedAt = new Date().toISOString();
+            operation.id = Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            queue.push(operation);
+            saveSyncQueue(queue);
+            console.log('[SyncQueue] 대기열 추가:', operation.type, '| 총', queue.length, '건');
+        }
+
+        function removeFromSyncQueue(opId) {
+            const queue = getSyncQueue().filter(function(op) { return op.id !== opId; });
+            saveSyncQueue(queue);
+        }
+
+        async function processSyncQueue() {
+            if (!supabase) return;
+            const queue = getSyncQueue();
+            if (queue.length === 0) return;
+
+            console.log('[SyncQueue] 동기화 시작:', queue.length, '건');
+            var synced = 0;
+            var failed = 0;
+
+            for (var i = 0; i < queue.length; i++) {
+                var op = queue[i];
+                try {
+                    var result = null;
+                    if (op.type === 'insert_store') {
+                        result = await supabase.from('stores').upsert(op.data, { onConflict: 'id' });
+                    } else if (op.type === 'upsert_stock') {
+                        result = await supabase.from('stock').upsert(op.data, { onConflict: 'store_id' });
+                    } else if (op.type === 'insert_coupon') {
+                        result = await supabase.from('coupons').insert(op.data);
+                    } else if (op.type === 'delete_coupon') {
+                        result = await supabase.from('coupons').delete().eq('id', op.data.id);
+                    } else if (op.type === 'upsert_store_info') {
+                        result = await supabase.from('store_info').upsert(op.data, { onConflict: 'store_id' });
+                    }
+
+                    if (result && result.error) throw result.error;
+                    removeFromSyncQueue(op.id);
+                    synced++;
+                } catch(e) {
+                    console.warn('[SyncQueue] 동기화 실패:', op.type, e);
+                    failed++;
+                }
+            }
+
+            if (synced > 0) {
+                showToast(synced + '건의 데이터가 서버에 동기화되었습니다!', 'success');
+            }
+            if (failed > 0) {
+                console.warn('[SyncQueue] 실패:', failed, '건 (다음에 재시도)');
+            }
+            updateSyncBadge();
+        }
+
+        function updateSyncBadge() {
+            var badge = document.getElementById('syncBadge');
+            var count = getSyncQueue().length;
+            if (!badge) return;
+            if (count > 0) {
+                badge.style.display = 'flex';
+                badge.textContent = count;
+                badge.title = count + '건의 데이터가 동기화 대기 중';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 페이지 로드 시 + 포커스 시 자동 동기화
+        window.addEventListener('focus', function() {
+            setTimeout(processSyncQueue, 1000);
+        });
+        // online 이벤트 시 동기화
+        window.addEventListener('online', function() {
+            showToast('인터넷 연결됨! 데이터 동기화 중...', 'success');
+            setTimeout(processSyncQueue, 500);
+        });
+
         let currentStatus = 'available';
         let isGuestMode = false;
         let currentAuthProvider = null;
@@ -2195,19 +2296,24 @@
             }
         }
 
-        // Save stock to Supabase
+        // Save stock to Supabase (with sync queue fallback)
         async function saveStockToDB(storeId, stock) {
-            if (!supabase) return undefined;
+            var stockData = {
+                store_id: storeId,
+                stock_count: stock,
+                updated_at: new Date().toISOString()
+            };
+            if (!supabase) {
+                addToSyncQueue({ type: 'upsert_stock', data: stockData });
+                return;
+            }
             try {
-                const { error } = await supabase.from('stock').upsert({
-                    store_id: storeId,
-                    stock_count: stock,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'store_id' });
+                const { error } = await supabase.from('stock').upsert(stockData, { onConflict: 'store_id' });
                 if (error) throw error;
                 console.log('Stock saved to Supabase');
             } catch(e) {
-                console.warn('Failed to save stock to Supabase:', e);
+                console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                addToSyncQueue({ type: 'upsert_stock', data: stockData });
             }
         }
 
@@ -2224,40 +2330,49 @@
             }
         }
 
-        // Save coupon to Supabase
+        // Save coupon to Supabase (with sync queue fallback)
         async function saveCouponToDB(coupon, storeId) {
-            if (!supabase) return undefined;
+            var couponData = {
+                store_id: storeId,
+                name: coupon.name,
+                type: coupon.type,
+                value: coupon.value,
+                quantity: coupon.quantity,
+                used: coupon.used,
+                code: coupon.code,
+                expiry: coupon.expiry,
+                min_order: coupon.minOrder,
+                description: coupon.desc,
+                created_at: coupon.createdAt,
+                active: coupon.active
+            };
+            if (!supabase) {
+                addToSyncQueue({ type: 'insert_coupon', data: couponData });
+                return;
+            }
             try {
-                const { error } = await supabase.from('coupons').insert({
-                    store_id: storeId,
-                    name: coupon.name,
-                    type: coupon.type,
-                    value: coupon.value,
-                    quantity: coupon.quantity,
-                    used: coupon.used,
-                    code: coupon.code,
-                    expiry: coupon.expiry,
-                    min_order: coupon.minOrder,
-                    description: coupon.desc,
-                    created_at: coupon.createdAt,
-                    active: coupon.active
-                });
+                const { error } = await supabase.from('coupons').insert(couponData);
                 if (error) throw error;
                 console.log('Coupon saved to Supabase');
             } catch(e) {
-                console.warn('Failed to save coupon to Supabase:', e);
+                console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                addToSyncQueue({ type: 'insert_coupon', data: couponData });
             }
         }
 
-        // Delete coupon from Supabase
+        // Delete coupon from Supabase (with sync queue fallback)
         async function deleteCouponFromDB(couponId) {
-            if (!supabase) return undefined;
+            if (!supabase) {
+                addToSyncQueue({ type: 'delete_coupon', data: { id: couponId } });
+                return;
+            }
             try {
                 const { error } = await supabase.from('coupons').delete().eq('id', couponId);
                 if (error) throw error;
                 console.log('Coupon deleted from Supabase');
             } catch(e) {
-                console.warn('Failed to delete coupon from Supabase:', e);
+                console.warn('Supabase 삭제 실패, 큐에 추가:', e);
+                addToSyncQueue({ type: 'delete_coupon', data: { id: couponId } });
             }
         }
 
@@ -2391,6 +2506,9 @@
             isGuestMode = checkGuestMode();
             loadCustomStores();
             initKakaoPlaces();
+            updateSyncBadge();
+            // 페이지 로드 후 2초 뒤 동기화 시도
+            setTimeout(processSyncQueue, 2000);
             const authLoading = document.getElementById('authLoading');
             const mainContent = document.getElementById('mainContent');
 
@@ -2674,17 +2792,23 @@
             const desc = document.getElementById('storeDescInput').value.trim();
             const storeId = selectedStoreId || '1';
 
-            // Save store info to Supabase (if available)
-            if (supabase) try {
-                const { error } = await supabase.from('store_info').upsert({
-                    store_id: storeId,
-                    description: desc || null,
-                    image_url: (imgEl && imgEl.src) ? imgEl.src : null,
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'store_id' });
-                if (error) throw error;
-            } catch (e) {
-                console.warn('Failed to save store info to Supabase:', e);
+            // Save store info to Supabase (with sync queue fallback)
+            var infoData = {
+                store_id: storeId,
+                description: desc || null,
+                image_url: (imgEl && imgEl.src) ? imgEl.src : null,
+                updated_at: new Date().toISOString()
+            };
+            if (supabase) {
+                try {
+                    const { error } = await supabase.from('store_info').upsert(infoData, { onConflict: 'store_id' });
+                    if (error) throw error;
+                } catch (e) {
+                    console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                    addToSyncQueue({ type: 'upsert_store_info', data: infoData });
+                }
+            } else {
+                addToSyncQueue({ type: 'upsert_store_info', data: infoData });
             }
 
             // Also save to localStorage as backup
@@ -3738,28 +3862,35 @@
                 registeredBy: currentUser ? (currentUser.email || currentUser.displayName || 'unknown') : 'guest'
             };
 
-            // Save to Supabase (if available)
-            if (supabase) try {
-                const { data, error } = await supabase.from('stores').insert({
-                    id: newId,
-                    name: name,
-                    addr: addr,
-                    region: region,
-                    area: region,
-                    store_type: storeType,
-                    menu: menu || '버터떡',
-                    price: price || '문의',
-                    phone: phone || '',
-                    lat: storeLat,
-                    lng: storeLng,
-                    password_hash: btoa(password),
-                    is_default: false,
-                    is_banned: false
-                }).select().single();
-                if (error) throw error;
-                console.log('Store saved to Supabase with lat:', storeLat, 'lng:', storeLng);
-            } catch(e) {
-                console.warn('Failed to save store to Supabase:', e);
+            // Save to Supabase (with sync queue fallback)
+            var storeDbData = {
+                id: newId,
+                name: name,
+                addr: addr,
+                region: region,
+                area: region,
+                store_type: storeType,
+                menu: menu || '버터떡',
+                price: price || '문의',
+                phone: phone || '',
+                lat: storeLat,
+                lng: storeLng,
+                password_hash: btoa(password),
+                is_default: false,
+                is_banned: false
+            };
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('stores').insert(storeDbData).select().single();
+                    if (error) throw error;
+                    console.log('Store saved to Supabase with lat:', storeLat, 'lng:', storeLng);
+                } catch(e) {
+                    console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                    addToSyncQueue({ type: 'insert_store', data: storeDbData });
+                }
+            } else {
+                addToSyncQueue({ type: 'insert_store', data: storeDbData });
+                showToast('오프라인 저장됨 - 인터넷 연결 시 자동 동기화됩니다', 'warning');
             }
 
             // Save password separately (hashed with simple btoa) - also to localStorage
