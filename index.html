@@ -1313,7 +1313,7 @@
           area: supabaseStore.area || '기타',
           lat: parseFloat(supabaseStore.lat),
           lng: parseFloat(supabaseStore.lng),
-          type: supabaseStore.type || '카페',
+          type: supabaseStore.store_type || supabaseStore.type || '카페',
           menu: supabaseStore.menu || '버터떡',
           price: supabaseStore.price || '개당 가격',
           status: 'available',
@@ -1326,14 +1326,78 @@
     });
 
     console.log(`Supabase에서 ${newStores.length}개의 새로운 매장 로드됨. 총 ${stores.length}개 매장 표시`);
+
+    // 새로 추가된 매장들의 마커를 지도에 그리기
+    if (newStores.length > 0 && typeof naver !== 'undefined' && map) {
+      newStores.forEach(function(supabaseStore) {
+        var s = stores.find(function(st) { return st.id === supabaseStore.id; });
+        if (s && s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng) && !markers[s.id]) {
+          var color = s.status === 'available' ? '#6BAF7B' : s.status === 'low' ? '#E8B84B' : '#E85D5D';
+          var marker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(s.lat, s.lng),
+            map: map,
+            title: s.name,
+            icon: {
+              content: createMarkerIcon(s.stock, color),
+              size: new naver.maps.Size(44, 44),
+              scaledSize: new naver.maps.Size(44, 44),
+              anchor: new naver.maps.Point(22, 22)
+            }
+          });
+          marker.storeId = s.id;
+          naver.maps.Event.addListener(marker, 'click', (function(store) { return function() { openStore(store); }; })(s));
+          markers[s.id] = marker;
+        }
+      });
+      console.log('새 매장 마커 추가 완료');
+    }
+
     return stores;
+  }
+
+  // localStorage 커스텀 매장 로드 (Supabase 없어도 작동)
+  function loadLocalCustomStores() {
+    try {
+      var customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+      var added = 0;
+      customStores.forEach(function(s) {
+        if (!stores.some(function(h) { return h.id === s.id; })) {
+          var mappedStore = {
+            id: s.id,
+            name: s.name || 'Unknown',
+            addr: s.addr || '',
+            region: s.region || '기타',
+            area: s.area || s.region || '기타',
+            lat: parseFloat(s.lat),
+            lng: parseFloat(s.lng),
+            type: s.type || '카페',
+            menu: s.menu || '버터떡',
+            price: s.price || '문의',
+            status: 'available',
+            stock: 999,
+            updated: '방금 전',
+            isFromLocal: true
+          };
+          if (mappedStore.lat && mappedStore.lng && !isNaN(mappedStore.lat) && !isNaN(mappedStore.lng)) {
+            stores.push(mappedStore);
+            added++;
+          }
+        }
+      });
+      if (added > 0) console.log('localStorage에서 ' + added + '개의 커스텀 매장 로드됨');
+    } catch(e) {
+      console.warn('localStorage 커스텀 매장 로드 실패:', e);
+    }
   }
 
   // ============================================
   // INITIALIZATION
   // ============================================
   document.addEventListener("DOMContentLoaded", function () {
-    // 1단계: 하드코딩 데이터로 즉시 지도 표시
+    // 0단계: localStorage 커스텀 매장 먼저 병합
+    loadLocalCustomStores();
+
+    // 1단계: 하드코딩 + 커스텀 데이터로 즉시 지도 표시
     try {
       initMap();
     } catch(e) {
