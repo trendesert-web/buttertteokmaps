@@ -39,10 +39,12 @@
       background: var(--color-bg);
     }
 
-    /* === FULL SCREEN MAP === */
+    /* === MAP CONTAINER === */
     #map {
       width: 100%;
-      height: 100%;
+      position: fixed;
+      top: 104px; /* header 64px + filter bar 40px */
+      bottom: 160px; /* bottom-area: banner 115px + nav 45px */
     }
 
     /* === TOP HEADER BAR === */
@@ -51,7 +53,7 @@
       top: 0;
       left: 0;
       right: 0;
-      z-index: 500;
+      z-index: 100;
       background: rgba(254, 250, 246, 0.85);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(212, 165, 116, 0.1);
@@ -121,7 +123,7 @@
       top: 64px;
       left: 0;
       right: 0;
-      z-index: 600;
+      z-index: 100;
       padding: 8px 12px;
       display: flex;
       gap: 6px;
@@ -217,9 +219,9 @@
     /* === MAP LOCATION BUTTON === */
     .map-my-location-btn {
       position: fixed;
-      bottom: 90px;
+      bottom: 200px;
       right: 16px;
-      z-index: 400;
+      z-index: 150;
       width: 48px;
       height: 48px;
       border-radius: 50%;
@@ -257,7 +259,7 @@
       max-height: 280px;
       overflow-y: auto;
       box-shadow: var(--shadow);
-      z-index: 1000;
+      z-index: 200;
     }
 
     .search-results.active {
@@ -307,18 +309,29 @@
       font-weight: 500;
     }
 
+    /* === BOTTOM AREA (배너 + 네비) === */
+    .bottom-area {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0 6px;
+      background: rgba(254, 250, 246, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 300;
+      border-top: 1px solid rgba(212, 165, 116, 0.1);
+    }
+
     /* === COUPANG BANNER === */
     .coupang-banner {
-      position: fixed;
-      bottom: 72px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 499;
-      border-radius: 12px;
+      position: relative;
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
       background: #fff;
-      opacity: 0.95;
     }
     .coupang-banner iframe {
       display: block;
@@ -338,7 +351,7 @@
       line-height: 18px;
       text-align: center;
       cursor: pointer;
-      z-index: 501;
+      z-index: 301;
     }
     .coupang-disclosure {
       font-size: 9px;
@@ -350,21 +363,12 @@
 
     /* === BOTTOM NAVIGATION === */
     .bottom-nav {
-      position: fixed;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 500;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border-radius: 50px;
-      border: 1px solid rgba(212, 165, 116, 0.15);
-      padding: 8px 16px;
+      position: relative;
       display: flex;
       align-items: center;
       gap: 8px;
-      box-shadow: var(--shadow);
-      max-width: calc(100% - 32px);
+      padding: 6px 16px;
+      margin-top: 2px;
     }
 
     .nav-tab {
@@ -405,7 +409,7 @@
       left: 0;
       right: 0;
       top: 0;
-      z-index: 600;
+      z-index: 400;
       background: rgba(0, 0, 0, 0.3);
       animation: fadeIn 0.2s ease-out;
     }
@@ -638,7 +642,7 @@
       font-size: 18px;
       color: var(--color-text-secondary);
       transition: all 0.2s ease;
-      z-index: 601;
+      z-index: 410;
     }
 
     .sheet-close:hover {
@@ -651,7 +655,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 9000;
+      z-index: 500;
       background: rgba(0, 0, 0, 0.4);
       align-items: center;
       justify-content: center;
@@ -741,7 +745,7 @@
       position: fixed;
       inset: 0;
       background: linear-gradient(135deg, var(--color-bg), rgba(212, 165, 116, 0.1));
-      z-index: 10000;
+      z-index: 600;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1267,23 +1271,23 @@
 <!-- My Location Button (on map) -->
 <button class="map-my-location-btn" id="btnMyLocation" title="내 위치">📍</button>
 
-<!-- Coupang Banner -->
-<div class="coupang-banner" id="coupangBanner">
-  <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'">✕</button>
-  <iframe src="https://ads-partners.coupang.com/widgets.html?id=974730&template=banner&trackingCode=AF5459499&subId=&width=320&height=100" width="320" height="100" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
-  <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
-</div>
-
-<!-- Bottom Navigation -->
-<div class="bottom-nav">
-  <button class="nav-tab" id="navCoupon">
-    <span class="nav-tab-icon">🎫</span>
-    <span>쿠폰</span>
-  </button>
-  <button class="nav-tab" id="navOwner">
-    <span class="nav-tab-icon">👤</span>
-    <span>사장님</span>
-  </button>
+<!-- Bottom Area (배너 + 네비 통합) -->
+<div class="bottom-area" id="bottomArea">
+  <div class="coupang-banner" id="coupangBanner">
+    <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'">✕</button>
+    <iframe src="https://ads-partners.coupang.com/widgets.html?id=974730&template=banner&trackingCode=AF5459499&subId=&width=320&height=100" width="320" height="100" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
+    <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-tab" id="navCoupon">
+      <span class="nav-tab-icon">🎫</span>
+      <span>쿠폰</span>
+    </button>
+    <button class="nav-tab" id="navOwner">
+      <span class="nav-tab-icon">👤</span>
+      <span>사장님</span>
+    </button>
+  </div>
 </div>
 
 <!-- FAQ Modal -->
@@ -1432,6 +1436,13 @@
   let selectedStore = null;
   let userLocation = null;
   let supabaseStocks = {};
+
+  // ============================================
+  // HELPER FUNCTIONS
+  // ============================================
+  function escHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
   // ============================================
   // SUPABASE DATA LOADING
@@ -2221,17 +2232,17 @@
         // 해당 지역 필터칩이 있으면 자동 적용
         var chipBtn = document.querySelector('.filter-chip[data-region="' + regionName + '"]');
         if (chipBtn) {
-          results.innerHTML = '<div class="search-result-item" onclick="filterByRegion(\'' + regionName + '\', document.querySelector(\'.filter-chip[data-region=\\x22' + regionName + '\\x22]\')); document.getElementById(\'searchResults\').classList.remove(\'active\'); document.getElementById(\'searchInput\').value=\'\';">' +
+          results.innerHTML = '<div class="search-result-item" onclick="filterByRegion(\'' + escHtml(regionName) + '\', document.querySelector(\'.filter-chip[data-region=\\x22' + escHtml(regionName) + '\\x22]\')); document.getElementById(\'searchResults\').classList.remove(\'active\'); document.getElementById(\'searchInput\').value=\'\';">' +
             '<div class="search-result-dot" style="background: var(--color-primary);"></div>' +
-            '<div class="search-result-text"><div style="font-weight:600;">📍 ' + regionName + ' 매장만 보기</div>' +
+            '<div class="search-result-text"><div style="font-weight:600;">📍 ' + escHtml(regionName) + ' 매장만 보기</div>' +
             '<div style="font-size:11px; color:var(--color-text-secondary);">' + filtered.length + '개 매장</div></div></div>' +
             filtered.slice(0, 5).map(function(store) {
               var color = store.status === "available" ? "var(--color-success)" : store.status === "low" ? "var(--color-warning)" : "var(--color-danger)";
               var openSt = getOpenStatus(store);
               return '<div class="search-result-item" onclick="searchResultClick(' + store.id + ')">' +
                 '<div class="search-result-dot" style="background:' + color + ';"></div>' +
-                '<div class="search-result-text"><div style="font-weight:600;">' + store.name + ' <span style="font-size:10px;color:' + (openSt.isOpen ? '#2E7D32' : '#C62828') + ';">' + openSt.label + '</span></div>' +
-                '<div style="font-size:11px;color:var(--color-text-secondary);">' + store.area + ' · ' + store.type + '</div></div></div>';
+                '<div class="search-result-text"><div style="font-weight:600;">' + escHtml(store.name) + ' <span style="font-size:10px;color:' + (openSt.isOpen ? '#2E7D32' : '#C62828') + ';">' + openSt.label + '</span></div>' +
+                '<div style="font-size:11px;color:var(--color-text-secondary);">' + escHtml(store.area) + ' · ' + escHtml(store.type) + '</div></div></div>';
             }).join("");
           results.classList.add("active");
           return;
@@ -2251,8 +2262,8 @@
           <div class="search-result-item" onclick="searchResultClick(${store.id})">
             <div class="search-result-dot" style="background: ${color};"></div>
             <div class="search-result-text">
-              <div style="font-weight: 600; color: var(--color-text-primary);">${store.name} <span style="font-size:10px;color:${openSt.isOpen ? '#2E7D32' : '#C62828'};">${openSt.label}</span></div>
-              <div style="font-size: 11px; color: var(--color-text-secondary);">${store.area} · ${store.type}</div>
+              <div style="font-weight: 600; color: var(--color-text-primary);">${escHtml(store.name)} <span style="font-size:10px;color:${openSt.isOpen ? '#2E7D32' : '#C62828'};">${openSt.label}</span></div>
+              <div style="font-size: 11px; color: var(--color-text-secondary);">${escHtml(store.area)} · ${escHtml(store.type)}</div>
             </div>
           </div>
         `;

@@ -642,7 +642,7 @@
             font-weight: 600;
             font-size: 15px;
             box-shadow: 0 10px 30px rgba(107, 175, 123, 0.4);
-            z-index: 9999;
+            z-index: 300;
             animation: slideDownToast 0.4s ease-out forwards;
             display: flex;
             flex-direction: column;
@@ -1186,7 +1186,7 @@
             inset: 0;
             background: rgba(45, 32, 22, 0.5);
             backdrop-filter: blur(4px);
-            z-index: 500;
+            z-index: 200;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1680,7 +1680,7 @@
           display: flex;
           align-items: center;
           justify-content: space-around;
-          z-index: 500;
+          z-index: 100;
           padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
@@ -1775,7 +1775,7 @@
             <!-- 매장 정보 입력 폼 -->
             <div class="store-register-section" id="registerSection" style="display: none;">
                 <!-- 뒤로가기 헤더 -->
-                <div style="padding: 16px 20px 12px; border-bottom: 1px solid rgba(212,165,116,0.15); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; background: var(--color-bg); z-index: 2;">
+                <div style="padding: 16px 20px 12px; border-bottom: 1px solid rgba(212,165,116,0.15); display: flex; align-items: center; gap: 10px; position: sticky; top: 0; background: var(--color-bg); z-index: 110;">
                     <button onclick="hideManualRegister()" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 8px 12px; border-radius: 8px; color: #8B5E3C;">← </button>
                     <h3 style="margin: 0; font-size: 16px; color: #8B5E3C; font-weight: 700;">📝 신규 매장 등록</h3>
                 </div>
@@ -2144,7 +2144,7 @@
 
         <div class="toast" id="toast" style="display: none;"></div>
 
-        <div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(45,32,22,0.5); backdrop-filter:blur(4px); z-index:600; display:none; align-items:center; justify-content:center; padding:20px;">
+        <div id="passwordModal" style="display:none; position:fixed; inset:0; background:rgba(45,32,22,0.5); backdrop-filter:blur(4px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px;">
             <div style="background:#FEFAF6; border-radius:20px; padding:28px; width:100%; max-width:340px; box-shadow:0 20px 60px rgba(45,32,22,0.2); text-align:center;">
                 <h3 style="margin:0 0 8px; font-size:18px; color:#8B5E3C;">🔒 비밀번호 확인</h3>
                 <p style="margin:0 0 16px; font-size:13px; color:#999;">매장 관리 비밀번호를 입력해주세요</p>
@@ -2466,6 +2466,7 @@
                 console.log('Stock saved to Supabase');
             } catch(e) {
                 console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                showToast('재고 저장 중 오류 발생. 재시도됩니다.', 'warning');
                 addToSyncQueue({ type: 'upsert_stock', data: stockData });
             }
         }
@@ -2479,6 +2480,7 @@
                 return data || [];
             } catch(e) {
                 console.warn('Failed to load coupons from Supabase:', e);
+                showToast('쿠폰 데이터를 불러오지 못했습니다.', 'warning');
                 return [];
             }
         }
@@ -2813,14 +2815,14 @@
             if (!toastContainer) {
                 toastContainer = document.createElement('div');
                 toastContainer.id = 'toastContainer';
-                toastContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 9998;';
+                toastContainer.style.cssText = 'position: fixed; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 299;';
                 document.body.appendChild(toastContainer);
             }
 
             // Create toast element
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.style.cssText = 'position: fixed; bottom: 20px; top: auto; left: 50%; transform: translateX(-50%) translateY(150px); z-index: 99999; pointer-events: auto; animation: slideDownToast 0.4s ease-out forwards;';
+            toast.style.cssText = 'position: fixed; bottom: 20px; top: auto; left: 50%; transform: translateX(-50%) translateY(150px); z-index: 300; pointer-events: auto; animation: slideDownToast 0.4s ease-out forwards;';
 
             // Build toast HTML
             const messageDiv = document.createElement('div');
@@ -4116,6 +4118,7 @@
                     console.log('Store saved to Supabase with lat:', storeLat, 'lng:', storeLng);
                 } catch(e) {
                     console.warn('Supabase 저장 실패, 큐에 추가:', e);
+                    showToast('서버 저장 실패. 나중에 자동 동기화됩니다.', 'warning');
                     addToSyncQueue({ type: 'insert_store', data: storeDbData });
                 }
             } else {
