@@ -115,6 +115,105 @@
       pointer-events: none;
     }
 
+    /* === FILTER BAR === */
+    .filter-bar {
+      position: fixed;
+      top: 64px;
+      left: 0;
+      right: 0;
+      z-index: 600;
+      padding: 8px 12px;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      background: rgba(254, 250, 246, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(212, 165, 116, 0.3);
+      background: white;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .filter-chip:hover { border-color: var(--color-primary); }
+    .filter-chip.active {
+      background: var(--color-secondary);
+      color: white;
+      border-color: var(--color-secondary);
+    }
+    .filter-chip-stock {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(107, 175, 123, 0.4);
+      background: white;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--color-success);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .filter-chip-stock.active {
+      background: var(--color-success);
+      color: white;
+      border-color: var(--color-success);
+    }
+    .filter-count {
+      display: inline-block;
+      min-width: 16px;
+      height: 16px;
+      line-height: 16px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 8px;
+      background: rgba(139, 94, 60, 0.15);
+      color: var(--color-secondary);
+      margin-left: 4px;
+    }
+    .filter-chip.active .filter-count {
+      background: rgba(255,255,255,0.3);
+      color: white;
+    }
+    .filter-chip-stock.active .filter-count {
+      background: rgba(255,255,255,0.3);
+      color: white;
+    }
+
+    /* === OPEN/CLOSED BADGE === */
+    .badge-open {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .badge-closed {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #FFEBEE;
+      color: #C62828;
+    }
+
     /* === MAP LOCATION BUTTON === */
     .map-my-location-btn {
       position: fixed;
@@ -211,7 +310,7 @@
     /* === COUPANG BANNER === */
     .coupang-banner {
       position: fixed;
-      bottom: 62px;
+      bottom: 72px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 499;
@@ -252,11 +351,11 @@
     /* === BOTTOM NAVIGATION === */
     .bottom-nav {
       position: fixed;
-      bottom: 16px;
+      bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 500;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
       border-radius: 50px;
       border: 1px solid rgba(212, 165, 116, 0.15);
@@ -1107,6 +1206,12 @@
 
 </div>
 
+<!-- Filter Bar -->
+<div class="filter-bar" id="filterBar">
+  <button class="filter-chip active" data-region="all" onclick="filterByRegion('all', this)">전체</button>
+  <button class="filter-chip-stock" id="filterStockOnly" onclick="toggleStockFilter(this)">✅ 재고있는곳</button>
+</div>
+
 <!-- Map -->
 <div id="map"></div>
 
@@ -1711,6 +1816,8 @@
           console.log('Supabase 데이터 합치기 완료');
           // Supabase 로드 후에도 커스텀 매장 마커 재확인
           ensureCustomStoreMarkers();
+          // 필터칩 재생성 (새로 추가된 매장 포함)
+          try { buildFilterChips(); } catch(e) {}
         }).catch(function(e) {
           console.warn('Supabase 데이터 합치기 실패:', e);
         });
@@ -1736,6 +1843,7 @@
         });
         try { addAllMarkers(); } catch(e) { console.error('마커 추가 오류:', e); }
         try { setupEventListeners(); } catch(e) { console.error('이벤트 리스너 오류:', e); }
+        try { buildFilterChips(); } catch(e) { console.error('필터 생성 오류:', e); }
       } else {
         console.warn('네이버 지도 SDK 로드 안됨, 폴백 사용');
         initFallbackMap();
@@ -1745,6 +1853,140 @@
       try { initFallbackMap(); } catch(e2) { console.error('폴백도 실패:', e2); }
     }
     hideLoading();
+  }
+
+  // ============================================
+  // FILTER LOGIC
+  // ============================================
+  var activeRegionFilter = 'all';
+  var stockFilterOn = false;
+
+  function buildFilterChips() {
+    // 매장 주소에서 구/시 단위 추출
+    var regionMap = {};
+    stores.forEach(function(s) {
+      var addr = s.addr || '';
+      // 시/군/구 단위 추출: "서울 강남구" → "강남구", "경기 용인시 수지구" → "수지구"
+      var match = addr.match(/([\uAC00-\uD7AF]+[시군구])/g);
+      if (match) {
+        // 마지막 구/시/군을 사용 (더 세부적)
+        var region = match[match.length - 1];
+        if (!regionMap[region]) regionMap[region] = 0;
+        regionMap[region]++;
+      }
+    });
+
+    // 개수 많은 순으로 정렬
+    var sorted = Object.keys(regionMap).sort(function(a, b) { return regionMap[b] - regionMap[a]; });
+
+    var bar = document.getElementById('filterBar');
+    if (!bar) return;
+
+    // 기존 필터칩 중 전체와 재고 버튼은 유지, 나머지 제거 후 재생성
+    var allBtn = bar.querySelector('[data-region="all"]');
+    var stockBtn = document.getElementById('filterStockOnly');
+    bar.innerHTML = '';
+    if (allBtn) bar.appendChild(allBtn);
+
+    sorted.forEach(function(region) {
+      var btn = document.createElement('button');
+      btn.className = 'filter-chip';
+      btn.setAttribute('data-region', region);
+      btn.innerHTML = region + '<span class="filter-count">' + regionMap[region] + '</span>';
+      btn.onclick = function() { filterByRegion(region, btn); };
+      bar.appendChild(btn);
+    });
+
+    if (stockBtn) bar.appendChild(stockBtn);
+  }
+
+  function filterByRegion(region, btn) {
+    activeRegionFilter = region;
+
+    // 버튼 활성화 상태 업데이트
+    document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+
+    applyFilters();
+  }
+
+  function toggleStockFilter(btn) {
+    stockFilterOn = !stockFilterOn;
+    btn.classList.toggle('active');
+    applyFilters();
+  }
+
+  function applyFilters() {
+    if (!map || typeof naver === 'undefined') return;
+
+    var visibleCount = 0;
+    var boundsPoints = [];
+
+    stores.forEach(function(s) {
+      var marker = markers[s.id];
+      if (!marker) return;
+
+      var show = true;
+
+      // 지역 필터
+      if (activeRegionFilter !== 'all') {
+        var addr = s.addr || '';
+        if (addr.indexOf(activeRegionFilter) === -1) {
+          show = false;
+        }
+      }
+
+      // 재고 필터
+      if (stockFilterOn) {
+        var stock = s.stock || 0;
+        // localStorage 재고도 확인
+        var localStock = localStorage.getItem('buttertteokmapStock_' + s.id);
+        if (localStock !== null) stock = parseInt(localStock) || 0;
+        if (stock <= 0 || s.status === 'soldout') {
+          show = false;
+        }
+      }
+
+      if (show) {
+        marker.setMap(map);
+        visibleCount++;
+        if (s.lat && s.lng) boundsPoints.push(new naver.maps.LatLng(s.lat, s.lng));
+      } else {
+        marker.setMap(null);
+      }
+    });
+
+    // 필터 결과에 맞게 지도 영역 조정
+    if (activeRegionFilter !== 'all' && boundsPoints.length > 0) {
+      var bounds = new naver.maps.LatLngBounds();
+      boundsPoints.forEach(function(p) { bounds.extend(p); });
+      map.fitBounds(bounds, { top: 100, bottom: 100, left: 40, right: 40 });
+    }
+
+    console.log('[필터] ' + activeRegionFilter + ' / 재고필터:' + stockFilterOn + ' → ' + visibleCount + '개 표시');
+  }
+
+  // 영업 상태 확인 (기본 10:00~21:00)
+  function getOpenStatus(store) {
+    var now = new Date();
+    var hour = now.getHours();
+    var openHour = 10, closeHour = 21;
+
+    // 커스텀 영업시간이 있으면 사용
+    var savedHours = localStorage.getItem('buttertteokmapHours_' + store.id);
+    if (savedHours) {
+      try {
+        var h = JSON.parse(savedHours);
+        openHour = h.open || 10;
+        closeHour = h.close || 21;
+      } catch(e) {}
+    }
+
+    if (hour >= openHour && hour < closeHour) {
+      return { isOpen: true, label: '영업중', closeAt: closeHour + ':00' };
+    } else {
+      return { isOpen: false, label: '영업종료', openAt: openHour + ':00' };
+    }
   }
 
   function addAllMarkers() {
@@ -1908,8 +2150,33 @@
         s =>
           s.name.toLowerCase().includes(query) ||
           s.area.toLowerCase().includes(query) ||
-          s.region.toLowerCase().includes(query)
+          s.region.toLowerCase().includes(query) ||
+          (s.addr && s.addr.toLowerCase().includes(query))
       );
+
+      // 지역명 검색인지 확인 (구/시/동/역 단위)
+      var regionMatch = query.match(/([\uAC00-\uD7AF]+[시군구동역])/);
+      if (regionMatch) {
+        var regionName = regionMatch[1];
+        // 해당 지역 필터칩이 있으면 자동 적용
+        var chipBtn = document.querySelector('.filter-chip[data-region="' + regionName + '"]');
+        if (chipBtn) {
+          results.innerHTML = '<div class="search-result-item" onclick="filterByRegion(\'' + regionName + '\', document.querySelector(\'.filter-chip[data-region=\\x22' + regionName + '\\x22]\')); document.getElementById(\'searchResults\').classList.remove(\'active\'); document.getElementById(\'searchInput\').value=\'\';">' +
+            '<div class="search-result-dot" style="background: var(--color-primary);"></div>' +
+            '<div class="search-result-text"><div style="font-weight:600;">📍 ' + regionName + ' 매장만 보기</div>' +
+            '<div style="font-size:11px; color:var(--color-text-secondary);">' + filtered.length + '개 매장</div></div></div>' +
+            filtered.slice(0, 5).map(function(store) {
+              var color = store.status === "available" ? "var(--color-success)" : store.status === "low" ? "var(--color-warning)" : "var(--color-danger)";
+              var openSt = getOpenStatus(store);
+              return '<div class="search-result-item" onclick="searchResultClick(' + store.id + ')">' +
+                '<div class="search-result-dot" style="background:' + color + ';"></div>' +
+                '<div class="search-result-text"><div style="font-weight:600;">' + store.name + ' <span style="font-size:10px;color:' + (openSt.isOpen ? '#2E7D32' : '#C62828') + ';">' + openSt.label + '</span></div>' +
+                '<div style="font-size:11px;color:var(--color-text-secondary);">' + store.area + ' · ' + store.type + '</div></div></div>';
+            }).join("");
+          results.classList.add("active");
+          return;
+        }
+      }
 
       if (filtered.length === 0) {
         results.innerHTML = '<div style="padding: 16px; text-align: center; color: var(--color-text-secondary); font-size: 13px;">검색 결과가 없습니다.</div>';
@@ -1919,11 +2186,12 @@
 
       results.innerHTML = filtered.map(store => {
         const color = store.status === "available" ? "var(--color-success)" : store.status === "low" ? "var(--color-warning)" : "var(--color-danger)";
+        var openSt = getOpenStatus(store);
         return `
           <div class="search-result-item" onclick="searchResultClick(${store.id})">
             <div class="search-result-dot" style="background: ${color};"></div>
             <div class="search-result-text">
-              <div style="font-weight: 600; color: var(--color-text-primary);">${store.name}</div>
+              <div style="font-weight: 600; color: var(--color-text-primary);">${store.name} <span style="font-size:10px;color:${openSt.isOpen ? '#2E7D32' : '#C62828'};">${openSt.label}</span></div>
               <div style="font-size: 11px; color: var(--color-text-secondary);">${store.area} · ${store.type}</div>
             </div>
           </div>
@@ -2000,9 +2268,15 @@
       }
     }
 
+    // 영업 상태 확인
+    var openStatus = getOpenStatus(store);
+    var openBadge = openStatus.isOpen
+      ? '<span class="badge-open">영업중 ~' + openStatus.closeAt + '</span>'
+      : '<span class="badge-closed">영업종료 ' + openStatus.openAt + '~</span>';
+
     document.getElementById("sheetIcon").className = `sheet-icon ${statusClass}`;
     document.getElementById("sheetIcon").textContent = "🧈";
-    document.getElementById("sheetName").textContent = store.name;
+    document.getElementById("sheetName").innerHTML = store.name + ' ' + openBadge;
     document.getElementById("sheetType").textContent = store.type;
     document.getElementById("sheetStock").className = `sheet-stock-bar ${statusClass}`;
     document.getElementById("sheetStockLabel").textContent = statusLabel;
