@@ -208,6 +208,47 @@
       font-weight: 500;
     }
 
+    /* === COUPANG BANNER === */
+    .coupang-banner {
+      position: fixed;
+      bottom: 62px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 499;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      background: #fff;
+      opacity: 0.95;
+    }
+    .coupang-banner iframe {
+      display: block;
+      border: none;
+    }
+    .coupang-banner-close {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      width: 18px;
+      height: 18px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 10px;
+      line-height: 18px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 501;
+    }
+    .coupang-disclosure {
+      font-size: 9px;
+      color: #999;
+      text-align: center;
+      padding: 1px 0;
+      background: #fff;
+    }
+
     /* === BOTTOM NAVIGATION === */
     .bottom-nav {
       position: fixed;
@@ -1120,6 +1161,13 @@
 
 <!-- My Location Button (on map) -->
 <button class="map-my-location-btn" id="btnMyLocation" title="내 위치">📍</button>
+
+<!-- Coupang Banner -->
+<div class="coupang-banner" id="coupangBanner">
+  <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'">✕</button>
+  <iframe src="https://ads-partners.coupang.com/widgets.html?id=974730&template=banner&trackingCode=AF5459499&subId=&width=320&height=100" width="320" height="100" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
+  <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+</div>
 
 <!-- Bottom Navigation -->
 <div class="bottom-nav">
