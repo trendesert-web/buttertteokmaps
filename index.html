@@ -1477,8 +1477,31 @@
       }
     });
 
-    // Filter stores that are not banned and don't already exist in hardcoded stores
-    const newStores = supabaseStores.filter(s => !stores.some(h => h.id === s.id));
+    // Filter stores that don't already exist (하드코딩 + localStorage 매장과 중복 방지)
+    const newStores = supabaseStores.filter(function(s) {
+      return !stores.some(function(h) {
+        return h.id === s.id || (h.name && s.name && h.name.trim().toLowerCase() === s.name.trim().toLowerCase());
+      });
+    });
+
+    // 기존 로컬 매장의 좌표를 Supabase 데이터로 업데이트
+    supabaseStores.forEach(function(sb) {
+      var existing = stores.find(function(s) {
+        return s.id === sb.id || (s.name && sb.name && s.name.trim().toLowerCase() === sb.name.trim().toLowerCase());
+      });
+      if (existing && existing.isFromLocal) {
+        var sbLat = parseFloat(sb.lat);
+        var sbLng = parseFloat(sb.lng);
+        if (sbLat && sbLng && !isNaN(sbLat) && !isNaN(sbLng)) {
+          existing.lat = sbLat;
+          existing.lng = sbLng;
+          existing.isFromSupabase = true;
+          if (markers[existing.id] && map) {
+            markers[existing.id].setPosition(new naver.maps.LatLng(sbLat, sbLng));
+          }
+        }
+      }
+    });
 
     // Merge with existing stores (keep hardcoded stores, add new ones from Supabase)
     newStores.forEach(supabaseStore => {
@@ -1534,6 +1557,39 @@
         });
       }
     });
+
+    // Supabase 매장을 localStorage에 캐싱 (다른 기기에서도 볼 수 있도록)
+    if (newStores.length > 0) {
+      try {
+        var cached = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
+        var cachedIds = {};
+        cached.forEach(function(c) { cachedIds[c.id] = true; });
+        var added = 0;
+        newStores.forEach(function(sb) {
+          if (!cachedIds[sb.id]) {
+            cached.push({
+              id: sb.id,
+              name: sb.name || 'Unknown',
+              addr: sb.address || sb.addr || '',
+              region: sb.region || '기타',
+              area: sb.area || '기타',
+              lat: parseFloat(sb.lat),
+              lng: parseFloat(sb.lng),
+              type: sb.store_type || sb.type || '카페',
+              menu: sb.menu || '버터떡',
+              price: sb.price || '문의',
+              phone: sb.phone || '',
+              isFromSupabase: true
+            });
+            added++;
+          }
+        });
+        if (added > 0) {
+          localStorage.setItem('buttertteokmapCustomStores', JSON.stringify(cached));
+          console.log('[동기화] Supabase → localStorage 캐싱:', added, '개 매장');
+        }
+      } catch(e) { console.warn('[동기화] 캐싱 실패:', e); }
+    }
 
     console.log(`Supabase에서 ${newStores.length}개의 새로운 매장 로드됨. 총 ${stores.length}개 매장 표시`);
 
