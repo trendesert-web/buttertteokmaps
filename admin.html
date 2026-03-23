@@ -1426,7 +1426,16 @@
                 // Load sanctions from Supabase
                 const { data: sanctions, error: sanctionsError } = await sbClient.from('sanctions').select('*').order('created_at', { ascending: false });
                 if (sanctionsError) throw sanctionsError;
-                sanctionsData = sanctions || [];
+                sanctionsData = (sanctions || []).map(function(s) {
+                  return {
+                    id: s.id,
+                    storeId: s.store_id || s.storeId,
+                    storeName: s.store_name || s.storeName || '',
+                    reason: s.reason || '',
+                    date: s.created_at ? new Date(s.created_at).toLocaleDateString('ko-KR') : (s.date || ''),
+                    status: s.status || 'active'
+                  };
+                });
 
                 allStoresDisplay = [...allStoresData, ...customStoresData];
             } catch (e) {

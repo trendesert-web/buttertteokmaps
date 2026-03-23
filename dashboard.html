@@ -2119,7 +2119,6 @@
                     </div>
                 </div>
             </div>
-            </div>
         </div>
 
         <!-- Bottom Tab Bar -->
@@ -2480,7 +2479,7 @@
                 return data || [];
             } catch(e) {
                 console.warn('Failed to load coupons from Supabase:', e);
-                return null;
+                return [];
             }
         }
 
@@ -4035,7 +4034,9 @@
             // Supabase에서도 중복 체크
             if (sbClient) {
                 try {
-                    var { data: existingStores } = await sbClient.from('stores').select('name, addr').or('name.eq.' + name + ',addr.eq.' + addr);
+                    var { data: existByName } = await sbClient.from('stores').select('name').eq('name', name).limit(1);
+                    var { data: existByAddr } = await sbClient.from('stores').select('name').eq('addr', addr).limit(1);
+                    var existingStores = (existByName || []).concat(existByAddr || []);
                     if (existingStores && existingStores.length > 0) {
                         showToast('이미 등록된 매장입니다: ' + existingStores[0].name, 'warning');
                         return;

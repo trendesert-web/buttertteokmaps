@@ -1939,10 +1939,14 @@
     if (!bar) return;
 
     // 기존 필터칩 중 전체와 재고 버튼은 유지, 나머지 제거 후 재생성
-    var allBtn = bar.querySelector('[data-region="all"]');
     var stockBtn = document.getElementById('filterStockOnly');
     bar.innerHTML = '';
-    if (allBtn) bar.appendChild(allBtn);
+    var allBtn = document.createElement('button');
+    allBtn.className = 'filter-chip active';
+    allBtn.setAttribute('data-region', 'all');
+    allBtn.textContent = '전체';
+    allBtn.onclick = function() { filterByRegion('all', allBtn); };
+    bar.appendChild(allBtn);
 
     sorted.forEach(function(region) {
       var btn = document.createElement('button');
@@ -2332,7 +2336,8 @@
 
     document.getElementById("sheetIcon").className = `sheet-icon ${statusClass}`;
     document.getElementById("sheetIcon").textContent = "🧈";
-    document.getElementById("sheetName").innerHTML = store.name + ' ' + openBadge;
+    var safeName = (store.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.getElementById("sheetName").innerHTML = safeName + ' ' + openBadge;
     document.getElementById("sheetType").textContent = store.type;
     document.getElementById("sheetStock").className = `sheet-stock-bar ${statusClass}`;
     document.getElementById("sheetStockLabel").textContent = statusLabel;
