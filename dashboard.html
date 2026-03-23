@@ -3913,12 +3913,13 @@
                     }
 
                     showToast('주소가 입력되었습니다!', 'success');
-                    // 주소 선택 후 폼 입력 필드로 스크롤 (registerSection 내부 스크롤)
+                    // 주소 선택 후 매장 이름 입력 필드로 스크롤
                     setTimeout(function() {
                         var regSection = document.getElementById('registerSection');
-                        var formTitle = document.getElementById('registerFormTitle');
-                        if (regSection && formTitle) {
-                            regSection.scrollTo({ top: formTitle.offsetTop - 80, behavior: 'smooth' });
+                        var nameField = document.getElementById('regStoreName');
+                        if (regSection && nameField) {
+                            regSection.scrollTo({ top: nameField.offsetTop - 100, behavior: 'smooth' });
+                            nameField.focus();
                         }
                     }, 300);
                 },

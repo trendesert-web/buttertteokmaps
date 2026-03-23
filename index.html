@@ -1863,28 +1863,6 @@
       console.warn('지오코딩 실패:', e);
     }
 
-    // 커스텀 매장이 있으면 자동으로 포커스
-    var customStoresOnMap = stores.filter(function(s) { return s.isFromLocal; });
-    if (customStoresOnMap.length > 0 && map) {
-      var firstCustom = customStoresOnMap[0];
-      if (firstCustom.lat && firstCustom.lng && !isNaN(firstCustom.lat) && !isNaN(firstCustom.lng)) {
-        setTimeout(function() {
-          map.setCenter(new naver.maps.LatLng(firstCustom.lat, firstCustom.lng));
-          map.setZoom(14);
-          // 배너 표시
-          var banner = document.createElement('div');
-          banner.className = 'custom-store-banner';
-          banner.innerHTML = '⭐ 등록 매장 ' + customStoresOnMap.length + '개: ' + customStoresOnMap.map(function(s){ return s.name; }).join(', ');
-          banner.onclick = function() {
-            if (customStoresOnMap[0]) openStore(customStoresOnMap[0]);
-            banner.remove();
-          };
-          document.body.appendChild(banner);
-          setTimeout(function() { banner.remove(); }, 8000);
-        }, 500);
-      }
-    }
-
     // 2단계: Supabase를 비동기로 로드 후 추가 매장 합치기 (지도는 이미 떠 있음)
     loadSupabaseSDK().then(function() {
       if (sbClient) {
