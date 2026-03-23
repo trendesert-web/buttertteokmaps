@@ -4021,6 +4021,28 @@
                 customStores = JSON.parse(localStorage.getItem('buttertteokmapCustomStores') || '[]');
             } catch (e) { customStores = []; }
 
+            // 중복 등록 방지 (이름 또는 주소가 동일한 매장)
+            var dupByName = customStores.find(function(s) { return s.name && s.name.trim().toLowerCase() === name.toLowerCase(); });
+            var dupByAddr = customStores.find(function(s) { return s.addr && s.addr.trim() === addr; });
+            if (dupByName) {
+                showToast('이미 등록된 매장입니다: ' + dupByName.name, 'warning');
+                return;
+            }
+            if (dupByAddr) {
+                showToast('같은 주소로 이미 등록된 매장이 있습니다: ' + dupByAddr.name, 'warning');
+                return;
+            }
+            // Supabase에서도 중복 체크
+            if (sbClient) {
+                try {
+                    var { data: existingStores } = await sbClient.from('stores').select('name, addr').or('name.eq.' + name + ',addr.eq.' + addr);
+                    if (existingStores && existingStores.length > 0) {
+                        showToast('이미 등록된 매장입니다: ' + existingStores[0].name, 'warning');
+                        return;
+                    }
+                } catch(e) { console.warn('중복체크 실패:', e); }
+            }
+
             // Generate new ID (start from 100 to avoid conflicts with default 42)
             const newId = customStores.length > 0
                 ? Math.max(...customStores.map(s => s.id)) + 1
