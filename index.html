@@ -1322,9 +1322,10 @@
     <h2>🧈 버터떡맵 사용법</h2>
     <div class="faq-item">
       <b>마커 색상 안내</b><br><br>
-      🟢 초록색 = 재고 충분 (10개 이상)<br><br>
-      🟡 노란색 = 품절 임박 (10개 미만)<br><br>
-      🔴 빨간색 = 품절 (0개)
+      🟢 초록색 = 재고 충분<br><br>
+      🟡 노란색 = 품절 임박<br><br>
+      🔴 빨간색 = 품절<br><br>
+      🎫 쿠폰 표시 = 사용 가능한 쿠폰이 있는 매장
     </div>
     <div class="faq-item">
       <b>마커의 숫자</b>
@@ -1587,7 +1588,7 @@
         var isCustom = s.isFromLocal || s.isFromSupabase;
         var color = s.status === 'available' ? '#6BAF7B' : s.status === 'low' ? '#E8B84B' : '#E85D5D';
         markers[s.id].setIcon({
-          content: isCustom ? createCustomMarkerIcon(s.stock, s.name) : createMarkerIcon(s.stock, color),
+          content: isCustom ? createCustomMarkerIcon(s.stock, s.name, hasCoupon(s.id)) : createMarkerIcon(s.stock, color, hasCoupon(s.id)),
           size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
           scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
           anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
@@ -1642,7 +1643,7 @@
             map: map,
             title: s.name,
             icon: {
-              content: isCustom ? createCustomMarkerIcon(s.stock, s.name) : createMarkerIcon(s.stock, color),
+              content: isCustom ? createCustomMarkerIcon(s.stock, s.name, hasCoupon(s.id)) : createMarkerIcon(s.stock, color, hasCoupon(s.id)),
               size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
               scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
               anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
@@ -1831,7 +1832,7 @@
             map: map,
             title: s.name,
             icon: {
-              content: createCustomMarkerIcon(s.stock || 0, s.name),
+              content: createCustomMarkerIcon(s.stock || 0, s.name, hasCoupon(s.id)),
               size: new naver.maps.Size(52, 52),
               scaledSize: new naver.maps.Size(52, 52),
               anchor: new naver.maps.Point(26, 26)
@@ -2081,7 +2082,7 @@
         map: map,
         title: store.name,
         icon: {
-          content: isCustom ? createCustomMarkerIcon(store.stock, store.name) : createMarkerIcon(store.stock, color),
+          content: isCustom ? createCustomMarkerIcon(store.stock, store.name, hasCoupon(store.id)) : createMarkerIcon(store.stock, color, hasCoupon(store.id)),
           size: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
           scaledSize: isCustom ? new naver.maps.Size(52, 52) : new naver.maps.Size(44, 44),
           anchor: isCustom ? new naver.maps.Point(26, 26) : new naver.maps.Point(22, 22)
@@ -2094,7 +2095,22 @@
     });
   }
 
-  function createMarkerIcon(stock, color) {
+  function hasCoupon(storeId) {
+    try {
+      var globalCoupons = JSON.parse(localStorage.getItem('buttertteokmapGlobalCoupons') || '[]');
+      var today = new Date().toISOString().split('T')[0];
+      return globalCoupons.some(function(c) {
+        return String(c.storeId) === String(storeId) && c.expiry >= today && c.used < c.quantity;
+      });
+    } catch(e) { return false; }
+  }
+
+  function couponBadge(show) {
+    if (!show) return '';
+    return '<div style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#FF6B6B;border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;z-index:2;">🎫</div>';
+  }
+
+  function createMarkerIcon(stock, color, showCoupon) {
     return `
       <div style="
         position: relative;
@@ -2113,11 +2129,12 @@
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
       ">
         ${stock > 999 ? "∞" : stock}
+        ${couponBadge(showCoupon)}
       </div>
     `;
   }
 
-  function createCustomMarkerIcon(stock, storeName) {
+  function createCustomMarkerIcon(stock, storeName, showCoupon) {
     return `
       <div style="
         position: relative;
@@ -2140,6 +2157,7 @@
           <div style="font-size:8px;">⭐NEW</div>
           <div>${stock > 999 ? "∞" : stock}</div>
         </div>
+        ${couponBadge(showCoupon)}
       </div>
     `;
   }
