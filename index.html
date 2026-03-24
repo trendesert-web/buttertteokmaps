@@ -1838,7 +1838,7 @@
     try {
       if (typeof naver === 'undefined' || !map) return;
       stores.forEach(function(s) {
-        if (s.isFromLocal && !markers[s.id] && s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng)) {
+        if ((s.isFromLocal || s.isFromSupabase) && !markers[s.id] && s.lat && s.lng && !isNaN(s.lat) && !isNaN(s.lng)) {
           var marker = new naver.maps.Marker({
             position: new naver.maps.LatLng(s.lat, s.lng),
             map: map,
@@ -1917,8 +1917,9 @@
     loadSupabaseSDK().then(function() {
       if (sbClient) {
         mergeSupabaseStores().then(function() {
-          console.log('Supabase 데이터 합치기 완료');
-          // Supabase 로드 후에도 커스텀 매장 마커 재확인
+          var supabaseCount = stores.filter(function(s) { return s.isFromSupabase; }).length;
+          console.log('Supabase 데이터 합치기 완료 - Supabase 매장:', supabaseCount, '전체:', stores.length);
+          // Supabase 로드 후에도 커스텀 매장 마커 재확인 (isFromSupabase 포함)
           ensureCustomStoreMarkers();
           // 필터칩 재생성 (새로 추가된 매장 포함)
           try { buildFilterChips(); } catch(e) {}
