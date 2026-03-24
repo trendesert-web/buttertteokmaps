@@ -2,8 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="버터떡맵 관리자 페이지. 버터떡 매장의 재고 상태 관리 및 운영 대시보드입니다.">
     <title>버터떡맵 관리자</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧈</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/pretendard@3.3.6/dist/web/static/pretendard.css" rel="stylesheet">
     <style>
         * {
@@ -913,22 +915,22 @@
                 </div>
                 <div class="form-group">
                     <label for="setupPass1">비밀번호</label>
-                    <input type="password" id="setupPass1" placeholder="비밀번호를 입력하세요">
+                    <input type="password" id="setupPass1" aria-label="새 비밀번호" placeholder="비밀번호를 입력하세요">
                 </div>
                 <div class="form-group">
                     <label for="setupPass2">비밀번호 확인</label>
-                    <input type="password" id="setupPass2" placeholder="비밀번호를 다시 입력하세요">
+                    <input type="password" id="setupPass2" aria-label="비밀번호 확인" placeholder="비밀번호를 다시 입력하세요">
                 </div>
-                <button class="login-button" onclick="handleSetupPassword()">비밀번호 설정</button>
+                <button class="login-button" aria-label="비밀번호 설정하기" onclick="handleSetupPassword()">비밀번호 설정</button>
             </div>
 
             <div class="login-mode" id="loginMode">
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
                         <label for="adminPassword">비밀번호</label>
-                        <input type="password" id="adminPassword" placeholder="관리자 비밀번호를 입력하세요" autofocus>
+                        <input type="password" id="adminPassword" aria-label="관리자 비밀번호" placeholder="관리자 비밀번호를 입력하세요" autofocus>
                     </div>
-                    <button type="submit" class="login-button">로그인</button>
+                    <button type="submit" class="login-button" aria-label="로그인하기">로그인</button>
                 </form>
             </div>
 
@@ -942,11 +944,11 @@
         <nav class="navbar">
             <div class="navbar-brand">🧈 버터떡맵 관리자</div>
             <div class="navbar-tabs">
-                <button class="navbar-tab active" onclick="switchTab('stores', event)">매장 관리</button>
-                <button class="navbar-tab" onclick="switchTab('sanctions', event)">유저 제재</button>
-                <button class="navbar-tab" onclick="switchTab('stats', event)">통계</button>
+                <button class="navbar-tab active" aria-label="매장 관리 탭" onclick="switchTab('stores', event)">매장 관리</button>
+                <button class="navbar-tab" aria-label="유저 제재 탭" onclick="switchTab('sanctions', event)">유저 제재</button>
+                <button class="navbar-tab" aria-label="통계 탭" onclick="switchTab('stats', event)">통계</button>
             </div>
-            <button class="navbar-logout" onclick="handleLogout()">로그아웃</button>
+            <button class="navbar-logout" aria-label="로그아웃하기" onclick="handleLogout()">로그아웃</button>
         </nav>
 
         <!-- CONTENT AREA -->
@@ -974,9 +976,9 @@
 
                 <div class="store-controls">
                     <div class="search-box">
-                        <input type="text" id="storeSearchInput" placeholder="매장명, 주소, 지역으로 검색..." onkeyup="filterStores()">
+                        <input type="text" id="storeSearchInput" aria-label="매장 검색" placeholder="매장명, 주소, 지역으로 검색..." onkeyup="filterStores()">
                     </div>
-                    <select class="sort-select" id="sortSelect" onchange="sortStores()">
+                    <select class="sort-select" id="sortSelect" aria-label="매장 정렬 기준" onchange="sortStores()">
                         <option value="name">이름순</option>
                         <option value="region">지역순</option>
                         <option value="type">등록유형순</option>
@@ -1004,7 +1006,7 @@
             <!-- USER SANCTIONS TAB -->
             <div class="tab-content" id="sanctionsTab">
                 <div class="sanctions-header">
-                    <button class="add-sanction-btn" onclick="openAddSanctionModal()">+ 새 제재 추가</button>
+                    <button class="add-sanction-btn" aria-label="새 제재 추가하기" onclick="openAddSanctionModal()">+ 새 제재 추가</button>
                 </div>
                 <div class="sanctions-list" id="sanctionsList">
                     <!-- Populated by JS -->

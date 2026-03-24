@@ -2,10 +2,20 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <meta name="description" content="전국 버터떡 매장 실시간 재고 확인! 42개 매장 위치, 재고 현황, 쿠폰 정보를 한눈에.">
+  <meta property="og:title" content="버터떡맵 | 전국 버터떡 실시간 재고 지도">
+  <meta property="og:description" content="전국 42개 버터떡 매장의 실시간 재고를 확인하세요. 내 주변 매장 찾기, 쿠폰, 재고 알림까지!">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://trendesert-web.github.io/buttertteokmaps/">
+  <meta property="og:image" content="https://trendesert-web.github.io/buttertteokmaps/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="버터떡맵 | 전국 버터떡 실시간 재고 지도">
+  <meta name="twitter:description" content="전국 42개 버터떡 매장의 실시간 재고를 확인하세요.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧈</text></svg>">
   <title>버터떡맵 | 전국 버터떡 실시간 재고 지도</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
   <style>
@@ -1205,10 +1215,10 @@
 
 <!-- Header Bar -->
 <div class="header-bar">
-  <a href="#" class="header-logo">
+  <h1 class="header-logo">
     <span class="header-logo-icon">🧈</span>
     <span>버터떡맵</span>
-  </a>
+  </h1>
   <div class="header-search-wrapper">
     <span class="header-search-icon">🔍</span>
     <input
@@ -1217,6 +1227,7 @@
       class="header-search"
       placeholder="카페/지역 검색"
       autocomplete="off"
+      aria-label="카페/지역 검색"
     >
     <div class="search-results" id="searchResults"></div>
   </div>
@@ -1225,8 +1236,8 @@
 
 <!-- Filter Bar -->
 <div class="filter-bar" id="filterBar">
-  <button class="filter-chip active" data-region="all" onclick="filterByRegion('all', this)">전체</button>
-  <button class="filter-chip-stock" id="filterStockOnly" onclick="toggleStockFilter(this)">✅ 재고있는곳</button>
+  <button class="filter-chip active" data-region="all" onclick="filterByRegion('all', this)" aria-label="지역 필터: 전체">전체</button>
+  <button class="filter-chip-stock" id="filterStockOnly" onclick="toggleStockFilter(this)" aria-label="재고 있는 매장만 보기">✅ 재고있는곳</button>
 </div>
 
 <!-- Map -->
@@ -1234,7 +1245,7 @@
 
 <!-- Store Info Sheet -->
 <div class="store-sheet-overlay" id="sheetOverlay">
-  <button class="sheet-close" id="sheetClose">✕</button>
+  <button class="sheet-close" id="sheetClose" aria-label="매장 정보 닫기">✕</button>
   <div class="store-sheet">
     <div class="sheet-drag-handle"></div>
     <div class="sheet-header">
@@ -1251,7 +1262,7 @@
     <!-- Store Image & Description (from owner) -->
     <div id="storeImageSection" style="display: none; margin-bottom: 16px;">
       <div id="storeImageWrapper" style="border-radius: 12px; overflow: hidden; margin-bottom: 10px; display: none;">
-        <img id="storeImage" src="" alt="매장 사진" style="width: 100%; height: 180px; object-fit: cover; display: block;">
+        <img id="storeImage" src="" alt="매장 사진" loading="lazy" style="width: 100%; height: 180px; object-fit: cover; display: block;">
       </div>
       <div id="storeDescription" style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; padding: 12px; background: rgba(212,165,116,0.06); border-radius: 10px; display: none;"></div>
     </div>
@@ -1270,8 +1281,8 @@
       </div>
     </div>
     <div class="sheet-actions">
-      <button class="action-btn" onclick="copyAddress()">📋 주소복사</button>
-      <button class="action-btn primary" onclick="openNavi()">🧭 길찾기</button>
+      <button class="action-btn" onclick="copyAddress()" aria-label="주소 복사">📋 주소복사</button>
+      <button class="action-btn primary" onclick="openNavi()" aria-label="길찾기">🧭 길찾기</button>
     </div>
     <!-- Store Coupons Section -->
     <div class="sheet-coupons-section" id="sheetCouponsSection" style="display: none;">
@@ -1282,34 +1293,34 @@
 </div>
 
 <!-- My Location Button (네비바로 이동, 숨김) -->
-<button class="map-my-location-btn" id="btnMyLocation" title="내 위치" style="display:none;">📍</button>
+<button class="map-my-location-btn" id="btnMyLocation" title="내 위치" aria-label="현재 위치 표시" style="display:none;">📍</button>
 
 <!-- Bottom Area (배너 + 네비 통합) -->
 <div class="bottom-area" id="bottomArea">
   <div class="coupang-banner" id="coupangBanner">
-    <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'">✕</button>
+    <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'" aria-label="배너 닫기">✕</button>
     <div class="banner-mobile">
       <iframe src="https://ads-partners.coupang.com/widgets.html?id=974729&template=banner&trackingCode=AF5459499&subId=&width=320&height=50" width="320" height="50" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
     </div>
     <div class="banner-desktop">
       <iframe src="https://ads-partners.coupang.com/widgets.html?id=974728&template=banner&trackingCode=AF5459499&subId=&width=728&height=90" width="728" height="90" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
     </div>
-    <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
+    <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다. · <a href="privacy.html" style="color:#999;text-decoration:underline;">개인정보처리방침</a></div>
   </div>
   <div class="bottom-nav">
-    <button class="nav-tab" id="navFaq" onclick="document.getElementById('faqModal').classList.add('active')">
+    <button class="nav-tab" id="navFaq" onclick="document.getElementById('faqModal').classList.add('active')" aria-label="사용법">
       <span class="nav-tab-icon">📖</span>
       <span>사용법</span>
     </button>
-    <button class="nav-tab" id="navMyLocation" onclick="handleMyLocation()">
+    <button class="nav-tab" id="navMyLocation" onclick="handleMyLocation()" aria-label="내 위치">
       <span class="nav-tab-icon">📍</span>
       <span>내 위치</span>
     </button>
-    <button class="nav-tab" id="navCoupon">
+    <button class="nav-tab" id="navCoupon" aria-label="쿠폰">
       <span class="nav-tab-icon">🎫</span>
       <span>쿠폰</span>
     </button>
-    <button class="nav-tab" id="navOwner">
+    <button class="nav-tab" id="navOwner" aria-label="사장님 로그인">
       <span class="nav-tab-icon">👤</span>
       <span>사장님</span>
     </button>
@@ -1344,7 +1355,7 @@
       ※ 재고는 실시간이 아닐 수 있으니, 방문 전 매장에 확인하세요.<br>
       ※ 매장 등록 문의: trendesert@gmail.com
     </p>
-    <button class="close-modal" onclick="closeFaq()">확인</button>
+    <button class="close-modal" onclick="closeFaq()" aria-label="모달 닫기">확인</button>
   </div>
 </div>
 
@@ -1357,8 +1368,8 @@
       <div class="coupon-code-input-section">
         <div class="coupon-code-input-title">쿠폰 코드 입력</div>
         <div class="coupon-code-input-row">
-          <input type="text" class="coupon-code-field" id="couponCodeInput" placeholder="코드 입력" maxlength="20" onkeypress="if(event.key==='Enter')claimCoupon()">
-          <button class="coupon-claim-btn" onclick="claimCoupon()">등록</button>
+          <input type="text" class="coupon-code-field" id="couponCodeInput" placeholder="코드 입력" maxlength="20" onkeypress="if(event.key==='Enter')claimCoupon()" aria-label="쿠폰 코드 입력">
+          <button class="coupon-claim-btn" onclick="claimCoupon()" aria-label="쿠폰 등록">등록</button>
         </div>
         <div class="coupon-hint">사장님에게 받은 쿠폰 코드를 입력하세요</div>
       </div>
@@ -1371,12 +1382,12 @@
         쿠폰 사용 전 반드시 해당 매장에 전화하여 쿠폰 사용 가능 여부를 확인해주세요. 매장 확인 없이 방문 시 쿠폰 적용이 거부될 수 있습니다.
       </div>
     </div>
-    <button class="close-modal" onclick="closeCouponBox()">닫기</button>
+    <button class="close-modal" onclick="closeCouponBox()" aria-label="쿠폰 모달 닫기">닫기</button>
   </div>
 </div>
 
 <!-- Naver Map SDK -->
-<script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304&submodules=geocoder"></script>
+<script async src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=g5b11sx304&submodules=geocoder"></script>
 
 <script>
   // ============================================
@@ -1852,6 +1863,25 @@
   // ============================================
   // INITIALIZATION
   // ============================================
+  function waitForNaverMaps(callback) {
+    if (typeof naver !== 'undefined' && naver.maps) {
+      callback();
+    } else {
+      var attempts = 0;
+      var check = setInterval(function() {
+        attempts++;
+        if (typeof naver !== 'undefined' && naver.maps) {
+          clearInterval(check);
+          callback();
+        } else if (attempts > 50) {
+          clearInterval(check);
+          console.error('Naver Maps SDK 로딩 시간 초과');
+          hideLoading();
+        }
+      }, 200);
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     // 0단계: 이벤트 리스너 초기화
     initMyLocationButton();
@@ -1859,13 +1889,14 @@
     // 0.5단계: localStorage 커스텀 매장 먼저 병합
     loadLocalCustomStores();
 
-    // 1단계: 하드코딩 + 커스텀 데이터로 즉시 지도 표시
-    try {
-      initMap();
-    } catch(e) {
-      console.error('지도 초기화 오류:', e);
-      hideLoading();
-    }
+    // 1단계: Naver Maps 로딩 대기 후 지도 표시
+    waitForNaverMaps(function() {
+      try {
+        initMap();
+      } catch(e) {
+        console.error('지도 초기화 오류:', e);
+        hideLoading();
+      }
 
     // 1.5단계: 커스텀 매장 마커가 확실히 생성되도록 안전장치
     try {
@@ -1897,6 +1928,7 @@
         console.log('[지도] Supabase 미연결 - localStorage 데이터만 사용');
       }
     });
+    }); // waitForNaverMaps 콜백 끝
   });
 
   function initMap() {
@@ -2305,7 +2337,7 @@
       openCouponBox();
     });
     document.getElementById("navOwner").addEventListener("click", () => {
-      window.location.href = "owner.html";
+      alert("준비 중입니다");
     });
   }
 
@@ -2427,7 +2459,7 @@
             ${c.desc ? '<div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">' + c.desc + '</div>' : ''}
             <div class="sheet-coupon-code-box">
               <span class="sheet-coupon-code">${c.code}</span>
-              <button class="sheet-coupon-copy-btn" onclick="event.stopPropagation(); copyCouponCode('${c.code}')">복사</button>
+              <button class="sheet-coupon-copy-btn" onclick="event.stopPropagation(); copyCouponCode('${c.code}')" aria-label="쿠폰 코드 복사">복사</button>
             </div>
             <div class="sheet-coupon-meta">~${c.expiry} · 잔여 ${remaining}장${c.minOrder > 0 ? ' · ' + c.minOrder.toLocaleString() + '원 이상' : ''}</div>
             <div class="sheet-coupon-phone-notice">📞 사용 전 매장 전화 확인 필수</div>
@@ -2675,7 +2707,7 @@
               ~${c.expiry}${c.minOrder > 0 ? ' · ' + c.minOrder.toLocaleString() + '원 이상' : ''}
               ${statusText ? ' · <b>' + statusText + '</b>' : ''}
             </div>
-            <button class="coupon-use-btn" ${disabled ? 'disabled' : ''} onclick="useMyCoupon('${c.code}')">
+            <button class="coupon-use-btn" ${disabled ? 'disabled' : ''} onclick="useMyCoupon('${c.code}')" aria-label="쿠폰 사용하기">
               ${isUsed ? '✓ 사용완료' : isExpired ? '만료됨' : '사용하기'}
             </button>
           </div>
