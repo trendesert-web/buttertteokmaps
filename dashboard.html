@@ -3197,8 +3197,8 @@
                 return `
                     <div class="issued-coupon-item" style="${isExpired ? 'opacity: 0.5;' : ''}">
                         <div class="issued-coupon-info">
-                            <div class="issued-coupon-name">${c.name} <span style="font-size: 13px; color: var(--color-accent); font-weight: 700;">${getDiscountDisplay(c)}</span></div>
-                            <div style="margin: 4px 0;"><span class="issued-coupon-code">${c.code}</span></div>
+                            <div class="issued-coupon-name">${escapeHtml(c.name)} <span style="font-size: 13px; color: var(--color-accent); font-weight: 700;">${getDiscountDisplay(c)}</span></div>
+                            <div style="margin: 4px 0;"><span class="issued-coupon-code">${escapeHtml(c.code)}</span></div>
                             <div class="issued-coupon-meta">
                                 <span>잔여 ${remaining}/${c.quantity}장</span>
                                 <span>사용 ${c.used || 0}장</span>
