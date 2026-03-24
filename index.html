@@ -42,8 +42,13 @@
     /* === MAP CONTAINER === */
     #map {
       width: 100%;
-      height: calc(100vh - 104px - 150px);
+      height: calc(100vh - 104px - 110px);
       margin-top: 104px;
+    }
+    @media (min-width: 768px) {
+      #map {
+        height: calc(100vh - 104px - 150px);
+      }
     }
 
     /* === TOP HEADER BAR === */
@@ -324,20 +329,24 @@
       border-top: 1px solid rgba(212, 165, 116, 0.1);
     }
 
-    /* === COUPANG BANNER === */
+    /* === COUPANG BANNER (반응형) === */
     .coupang-banner {
       position: relative;
-      width: 100%;
-      border-radius: 0;
+      border-radius: 10px;
       overflow: hidden;
       box-shadow: 0 1px 8px rgba(0,0,0,0.08);
       background: #fff;
+      margin: 4px 0;
     }
     .coupang-banner iframe {
       display: block;
       border: none;
-      width: 100%;
-      height: 90px;
+    }
+    .banner-mobile { display: block; }
+    .banner-desktop { display: none; }
+    @media (min-width: 768px) {
+      .banner-mobile { display: none; }
+      .banner-desktop { display: block; }
     }
     .coupang-banner-close {
       position: absolute;
@@ -1279,7 +1288,12 @@
 <div class="bottom-area" id="bottomArea">
   <div class="coupang-banner" id="coupangBanner">
     <button class="coupang-banner-close" onclick="document.getElementById('coupangBanner').style.display='none'">✕</button>
-    <iframe src="https://ads-partners.coupang.com/widgets.html?id=974728&template=banner&trackingCode=AF5459499&subId=&width=728&height=90" width="728" height="90" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics style="max-width:100%;"></iframe>
+    <div class="banner-mobile">
+      <iframe src="https://ads-partners.coupang.com/widgets.html?id=974729&template=banner&trackingCode=AF5459499&subId=&width=320&height=50" width="320" height="50" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
+    </div>
+    <div class="banner-desktop">
+      <iframe src="https://ads-partners.coupang.com/widgets.html?id=974728&template=banner&trackingCode=AF5459499&subId=&width=728&height=90" width="728" height="90" frameborder="0" scrolling="no" referrerpolicy="unsafe-url" browsingtopics></iframe>
+    </div>
     <div class="coupang-disclosure">이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.</div>
   </div>
   <div class="bottom-nav">
